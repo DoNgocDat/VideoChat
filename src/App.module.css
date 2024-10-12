@@ -1,0 +1,70 @@
+body{
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.routeLink {
+    background-color: #ffffff;
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    height: 50px;
+    box-shadow: 2px 2px 2px #c0deeb;
+}
+
+.routeLink .link {
+    color: #1c0e72;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.logo {
+    width: 120px;
+    height: 30px;
+    padding-left: 17px;
+}
+
+.headerleft{
+    width: 50%;
+    float: left;
+}
+
+.headerright{
+    width: 40%;
+    float: left;
+    margin: 7px;
+    text-align: right;
+}
+
+.btnregister{
+    margin: 5px;
+    height: 25px;
+    width: 90px;
+    border-radius: 30px;
+    border-color: #007aff;
+    color: #007aff;
+    box-shadow: 2px 2px 2px #c0deeb;
+}
+
+.btnregister:hover{
+    background-color: #c0deeb;
+    border-color: #c0deeb;
+}
+
+.btnlogin{
+    margin: 5px;
+    height: 25px;
+    width: 90px;
+    border-radius: 30px;
+    border-color: #007aff;
+    background-color: #007aff;
+    color: #ffffff;
+    box-shadow: 2px 2px 2px #c0deeb;
+}
+
+.btnlogin:hover{
+    background-color: #489cd3;
+    border-color: #489cd3;
+}
