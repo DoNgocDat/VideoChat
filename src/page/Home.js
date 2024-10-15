@@ -125,6 +125,7 @@ const ButtonRegister = styled.button`
   border-color: #007aff;
   color: #007aff;
   box-shadow: 2px 2px 2px #c0deeb;
+  cursor: pointer;
 
   &:hover {
     background-color: #c0deeb;
@@ -141,6 +142,7 @@ const ButtonLogin = styled.button`
   background-color: #007aff;
   color: #ffffff;
   box-shadow: 2px 2px 2px #c0deeb;
+  cursor: pointer;
 
   &:hover {
     background-color: #489cd3;
@@ -165,7 +167,7 @@ function Home() {
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonRegister>Đăng ký</ButtonRegister>
+          <ButtonRegister onClick={() => navigate('/register')}>Đăng ký</ButtonRegister>
           <ButtonLogin onClick={() => navigate('/login')}>Đăng nhập</ButtonLogin>
         </HeaderRight>
       </RouteLink>
