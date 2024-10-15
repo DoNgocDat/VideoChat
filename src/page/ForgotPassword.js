@@ -5,63 +5,75 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
 
 const ContentLeft = styled.div`
-  width: 50%;
-  float: left;
-  background-image: url(${BannerLogin});
-  background-position: center;
-  background-size: cover;
-  height: 100vh;
+    width: 45%;
+    float: left;
+    background-image: url(${BannerLogin});
+    background-position: center;
+    background-size: cover;
+    height: 100vh;
 `;
 
 const TitleLogin = styled.h2`
     color: #ffffff;
+    font-size: 40px;
     text-align: center;
-    margin-top: 220px;
+    margin-top: 35%;
 `;
 
 const ContentRight = styled.div`
-  width: 50%;
-  float: left;
+    width: 55%;
+    float: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 `;
 
 const LogoSkyImg = styled.img`
-    width: 120px;
+    width: 150px;
     height: 70px;
-    margin-left: 40%;
-    margin-top: 10%;
+    margin: 0 auto;
+    display: block;
 `;
 
-const Title = styled.h3`
+const Title = styled.p`
     text-align: center;
-    color: #4981d6;
+    color: #007aff;
+    font-size: 35px;
+    font-weight: 620;
 `;
 
 const Input = styled.input`
-    margin-left: 30%;
-    background-color: #c9c8c8;
+    background-color: #b3b3b366;
     height: 30px;
-    width: 245px;
-    margin-bottom: 20px;
+    width: 40%;
+    margin: 10px auto;
+    display: block;
     border: none;
     border-radius: 10px;
+    padding: 5px;
 `;
 
 const StyledLink = styled(Link)`
-    margin-left: 30%;
-    display: block;
-    text-align: center;
-    margin-bottom: 20px;
     text-decoration: none;
     color: #007aff;
+    margin-top: 0 auto;
+    display: block;
+    margin-left: auto;
+    margin-right: 30%;
+    text-align: right;
 `;
 
 const ButtonAuthen = styled.button`
     background-color: #007aff;
     color: #ffffff;
-    margin-left: 40%;
+    font-size: 15px;
+    margin: 20px auto;
+    display: block;
     border: none;
-    height: 35px;
-    width: 130px;
+    height: 30px;
+    width: 20%;
     border-radius: 30px;
     cursor: pointer;
 `;
@@ -97,11 +109,11 @@ function PorgotPassword() {
                 </motion.div>
             </ContentLeft>
             <ContentRight>
-                <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} /> <br />
+                <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} />
                 <Title>Quên Mật Khẩu</Title>
-                <Input placeholder="Nhập email"></Input> <br />
+                <Input placeholder="Nhập email"></Input>
                 <StyledLink to="/login">Quay lại</StyledLink>
-                <ButtonAuthen onClick={handleAuthenAccountClick}>Xát nhận</ButtonAuthen>
+                <ButtonAuthen onClick={handleAuthenAccountClick}>Xác nhận</ButtonAuthen>
             </ContentRight>
         </>
 
