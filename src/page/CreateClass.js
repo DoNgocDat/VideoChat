@@ -4,60 +4,72 @@ import logoSky from '../images/logo-sky.png';
 import Avata from '../images/avata.jpg';
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faVideo, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 
 const BackgroundImg = styled.div`
-  position: relative; /* Để lớp phủ và nội dung có thể nằm bên trong */
-  width: 100%;
-  float: left;
-  background-image: url(${Background});
-  background-position: center;
-  background-size: cover;
-  height: 100vh;
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-image: url(${Background});
+    background-position: center;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;  
 `;
 
 const BackgroundOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7); /* Màu phủ trắng với độ mờ 70% */
-  z-index: 1; /* Đảm bảo nó nằm dưới phần nội dung */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 1;
 `;
 
 const RouteLink = styled.nav`
-  background-color: #ffffff;
-  padding: 10px;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 1000;
-  height: 50px;
-  box-shadow: 2px 2px 2px #c0deeb;
+    background-color: #ffffff;
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    height: 50px;
+    box-shadow: 2px 2px 2px #c0deeb;
+    display: flex;
+    justify-content: space-between; /* Align avatar and logo properly */
 `;
 
 const HeaderLeft = styled.div`
-  width: 50%;
-  float: left;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
 `;
 
 const HeaderRight = styled.div`
-  width: 40%;
-  float: left;
-  margin: 7px;
-  text-align: right;
+    display: flex;
+    align-items: center;
+    padding-right: 30px;
 `;
 
 const Logo = styled.img`
-  width: 120px;
-  height: 30px;
-  padding-left: 17px;
+    position: absolute;
+    top: 5px; /* Adjust to position logo on top of text */
+    z-index: 3;
+    width: 100px; /* Adjust size as needed */
+    height: auto;
 `;
 
 const StyledLink = styled(Link)`
-  color: #1c0e72;
-  text-decoration: none;
-  margin: 0 10px;
+    color: #1c0e72;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 45px;
 `;
 
 const ButtonAvata = styled.button`
@@ -68,57 +80,72 @@ const ButtonAvata = styled.button`
     width: 40px;
     border: none;
     border-radius: 50%;
+    margin-right: 10px; /* Space between avatar and name */
     cursor: pointer;
 `;
 
 const UserNameLink = styled(Link)`
     text-decoration: none;
     color: #1c0e72;
-    margin-left: 16px;
-    font-size: 20px;
+    font-size: 18px;
 `;
 
-const TitleCreateClass = styled.h2`
-  position: relative; /* Để nội dung nằm trên lớp phủ */
-  z-index: 2; /* Đảm bảo nội dung nằm trên lớp phủ */
-  text-align: center;
-  color: #000000;
-  margin-top: 200px;
+const TitleCreateClass = styled.p`
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: #000000;
+    font-size: 35px;
+    font-weight: 700;
+`;
+
+const ActionContainer = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    margin-top: 20px;
+    width: 50%;
 `;
 
 const ButtonCreateClass = styled.button`
     background-color: #007aff;
     color: #ffffff;
     border: none;
-    height: 30px;
-    width: 150px;
+    height: 40px;
+    width: 180px;
     border-radius: 30px;
-    position: relative; /* Để nội dung nằm trên lớp phủ */
-    z-index: 2;
-    margin-left: 370px;
+    cursor: pointer;
+    font-size: 20px;
+    margin-right: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 `;
 
 const InputClassCode = styled.input`
-    height: 25px;
-    width: 150px;
+    height: 40px;
+    width: 200px;
     background-color: #eceaea;
     color: #3c3c43;
     border-radius: 15px;
-    margin-left: 20px;
+    border: none;
+    padding-left: 15px;
     margin-right: 20px;
-    position: relative; /* Để nội dung nằm trên lớp phủ */
-    z-index: 2;
 `;
 
 const ButtonJoin = styled.button`
     background-color: #ffffff;
     color: #007aff;
-    border-color: #007aff;
-    height: 30px;
-    width: 150px;
+    border: 2px solid #007aff;
+    height: 40px;
+    width: 180px;
     border-radius: 30px;
-    position: relative; /* Để nội dung nằm trên lớp phủ */
-    z-index: 2;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 `;
 
 const variants = {
@@ -131,13 +158,13 @@ function CreateClass() {
     <>
       <RouteLink>
         <HeaderLeft>
-          <Logo src={logoSky} alt="Logo Sky" /> <br />
+          <Logo src={logoSky} alt="Logo Sky" />
           <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata></ButtonAvata>
-          <UserNameLink>Đỗ Ngọc Đạt</UserNameLink>
+          <ButtonAvata />
+          <UserNameLink to="/profile">Đỗ Ngọc Đạt</UserNameLink>
         </HeaderRight>
       </RouteLink>
 
@@ -149,17 +176,25 @@ function CreateClass() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           variants={variants}
-          style={{ position: 'relative', zIndex: 2 }}
         >
           <TitleCreateClass>
             SKY VIDEO CHAT<br />
             Ứng dụng gọi video trực tuyến hỗ trợ học tập<br />
             Học tập và làm việc online, bắt kịp xu hướng công nghệ
-          </TitleCreateClass> <br />
+          </TitleCreateClass>
         </motion.div>
-        <ButtonCreateClass>Tạo lớp học</ButtonCreateClass>
-        <InputClassCode placeholder="Nhập mã lớp"></InputClassCode>
-        <ButtonJoin>Tham gia</ButtonJoin>
+
+        <ActionContainer>
+          <ButtonCreateClass>
+            <FontAwesomeIcon icon={faVideo} style={{ marginRight: '8px' }} />
+            Tạo lớp 
+          </ButtonCreateClass>
+          <InputClassCode placeholder="Nhập mã lớp" />
+          <ButtonJoin>
+            <FontAwesomeIcon icon={faSignInAlt} style={{ marginRight: '8px' }} /> 
+            Tham gia
+          </ButtonJoin>
+        </ActionContainer>
       </BackgroundImg>
     </>
   );

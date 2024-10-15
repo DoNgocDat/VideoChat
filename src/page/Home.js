@@ -9,7 +9,7 @@ const Container = styled.div`
   margin: 100px 20px 20px 20px;
 `;
 
-const Title = styled.h3`
+const Title = styled.h1`
   text-align: center;
   margin: 30px;
   color: #1c0e72;
@@ -31,6 +31,13 @@ const ContentTitle = styled.p`
   line-height: 2;
   font-weight: 500;
   font-family: revert;
+`;
+
+const ContentTitleCR = styled.p`
+  line-height: 2;
+  font-weight: 500;
+  font-family: revert;
+  text-align: center;
 `;
 
 const ContainerContent = styled.div`
@@ -60,8 +67,9 @@ const ClearFix = styled.div`
 `;
 
 const BottomSection = styled.div`
-  margin-top: 50px;
+  margin-top: 40px;
   text-align: center;
+  display: columns;
 `;
 
 const BottomContact = styled.div`
@@ -91,30 +99,37 @@ const RouteLink = styled.nav`
   z-index: 1000;
   height: 50px;
   box-shadow: 2px 2px 2px #c0deeb;
+  display: flex;
+  justify-content: space-between; /* Align avatar and logo properly */
 `;
 
 const HeaderLeft = styled.div`
-  width: 50%;
-  float: left;
+  display: flex;
+  align-items: center;
+  padding-left: 20px;
 `;
 
 const HeaderRight = styled.div`
-  width: 40%;
-  float: left;
-  margin: 7px;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  padding-right: 30px;
 `;
 
 const Logo = styled.img`
-  width: 120px;
-  height: 30px;
-  padding-left: 17px;
+  position: absolute;
+  top: 5px; /* Adjust to position logo on top of text */
+  z-index: 3;
+  width: 100px; /* Adjust size as needed */
+  height: auto;
 `;
 
 const StyledLink = styled(Link)`
   color: #1c0e72;
   text-decoration: none;
-  margin: 0 10px;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 45px;
 `;
 
 const ButtonRegister = styled.button`
@@ -239,8 +254,9 @@ function Home() {
             </BottomSocialNetwork>
           </motion.div>
           <br />
-          <ContentTitle>© 2024 Sky Video Chat. Bản quyền thuộc về Sky Video Chat</ContentTitle>
         </BottomSection>
+        <ContentTitleCR>© 2024 Sky Video Chat. Bản quyền thuộc về Sky Video Chat</ContentTitleCR>
+
       </Container>
     </>
   );
