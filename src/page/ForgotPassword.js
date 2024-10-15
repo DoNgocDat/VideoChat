@@ -16,7 +16,7 @@ const ContentLeft = styled.div`
 const TitleLogin = styled.h2`
     color: #ffffff;
     text-align: center;
-    margin-top: 250px;
+    margin-top: 220px;
 `;
 
 const ContentRight = styled.div`
@@ -46,16 +46,16 @@ const Input = styled.input`
     border-radius: 10px;
 `;
 
-const StyledLink = styled.span`
-    margin-left: 10%;
+const StyledLink = styled(Link)`
+    margin-left: 30%;
     display: block;
     text-align: center;
     margin-bottom: 20px;
+    text-decoration: none;
     color: #007aff;
-    cursor: pointer;
 `;
 
-const ButtonLogin = styled.button`
+const ButtonAuthen = styled.button`
     background-color: #007aff;
     color: #ffffff;
     margin-left: 40%;
@@ -66,33 +66,21 @@ const ButtonLogin = styled.button`
     cursor: pointer;
 `;
 
-const ContentBottom = styled.p`
-    text-align: center;
-`;
-
-const ContentBottomLink = styled(Link)`
-    text-decoration: none;
-    color: #007aff;
-`;
-
 const variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
-  };
+};
 
-function Login() {
+function PorgotPassword() {
+
     const navigate = useNavigate();
 
-    const handleForgotPasswordClick = () => {
-        navigate('/forgot-password');
+    const handleAuthenAccountClick = () => {
+        navigate('/authen-account');
     };
 
     const handleReturnHome = () => {
         navigate('/');
-    };
-
-    const handleCreateClass = () => {
-        navigate('/create-class');
     };
 
     return (
@@ -105,20 +93,19 @@ function Login() {
                     transition={{ duration: 0.5 }}
                     variants={variants}
                 >
-                    <TitleLogin>Chào mừng bạn đến với <br /> SKY VIDEO CHAT</TitleLogin>
+                    <TitleLogin>Bạn đừng quá lo lắng <br /> SKY VIDEO CHAT <br /> sẽ giúp bạn lấy lại mật khẩu</TitleLogin>
                 </motion.div>
             </ContentLeft>
             <ContentRight>
                 <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} /> <br />
-                <Title>Đăng Nhập</Title>
-                <Input placeholder="Tên đăng nhập"></Input>
-                <Input placeholder="Mật khẩu"></Input> <br />
-                <StyledLink onClick={handleForgotPasswordClick}>Bạn quên mật khẩu?</StyledLink> {/* Thêm sự kiện onClick */}
-                <ButtonLogin onClick={handleCreateClass}>Đăng nhập</ButtonLogin>
-                <ContentBottom>Bạn chưa có tài khoản?<ContentBottomLink to="/register"> Đăng ký</ContentBottomLink></ContentBottom>
+                <Title>Quên Mật Khẩu</Title>
+                <Input placeholder="Nhập email"></Input> <br />
+                <StyledLink to="/login">Quay lại</StyledLink>
+                <ButtonAuthen onClick={handleAuthenAccountClick}>Xát nhận</ButtonAuthen>
             </ContentRight>
         </>
+
     );
 }
 
-export default Login;
+export default PorgotPassword;
