@@ -7,6 +7,7 @@ import ResetPassword from './page/ResetPassword';
 import CreateClass from './page/CreateClass';
 import RegisterPage from './page/Register';
 import PersonalInformation from './page/PersonalInformation'
+import WaitingRoom from "./page/WaitingRoom";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/create-class" element={<CreateClass/>}/>
         <Route path="/register" element={<RegisterPage/>}/>
         <Route path="/personal-information" element={<PersonalInformation/>}/>
+        <Route path="/waiting-room" element={<WaitingRoom />} />
       </Routes>
     </BrowserRouter>
   );
