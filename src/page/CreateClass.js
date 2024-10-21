@@ -154,6 +154,13 @@ const variants = {
 };
 
 function CreateClass() {
+
+  const navigate = useNavigate();
+
+  const handlePersonalInformationClick = () => {
+      navigate('/personal-information');
+  };
+
   return (
     <>
       <RouteLink>
@@ -163,8 +170,8 @@ function CreateClass() {
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata />
-          <UserNameLink to="/profile">Đỗ Ngọc Đạt</UserNameLink>
+          <ButtonAvata onClick={handlePersonalInformationClick}/>
+          <UserNameLink to="/personal-information">Đỗ Ngọc Đạt</UserNameLink>
         </HeaderRight>
       </RouteLink>
 

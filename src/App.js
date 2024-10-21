@@ -6,6 +6,7 @@ import AuthenAccount from './page/AuthenAccount';
 import ResetPassword from './page/ResetPassword';
 import CreateClass from './page/CreateClass';
 import RegisterPage from './page/Register';
+import PersonalInformation from './page/PersonalInformation'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword/>}/>
         <Route path="/create-class" element={<CreateClass/>}/>
         <Route path="/register" element={<RegisterPage/>}/>
+        <Route path="/personal-information" element={<PersonalInformation/>}/>
       </Routes>
     </BrowserRouter>
   );
