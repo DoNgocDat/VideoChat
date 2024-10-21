@@ -93,12 +93,18 @@ const StyledButtonCancel = styled.button`
     }
 `;
 
+const GenderTitle = styled.p`
+    font-size: 15px;
+    padding-left: 10px;
+`;
+
 function DrawerPersonalInformation({ onClose, isExiting }) {
     return (
         <Drawer isExiting={isExiting}>
             <DrawerTitle>Chỉnh sửa thông tin</DrawerTitle>
             <InputField placeholder="Họ tên" />
             <InputField placeholder="Ngày sinh" />
+            <GenderTitle>Giới tính</GenderTitle>
             <GenderField>
                 <label>
                     <input type="radio" name="gender" value="Nam" /> Nam

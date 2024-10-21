@@ -26,7 +26,7 @@ const BackgroundOverlay = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.7);
     z-index: 1;
 `;
 
@@ -92,20 +92,20 @@ const UserNameLink = styled(Link)`
 
 const TitleCreateClass = styled.p`
     position: relative;
-    z-index: 2;
     text-align: center;
     color: #000000;
     font-size: 35px;
     font-weight: 700;
+    z-index:100;
 `;
 
 const ActionContainer = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2;
     margin-top: 20px;
     width: 50%;
+    z-index: 10;
 `;
 
 const ButtonCreateClass = styled.button`
@@ -161,11 +161,19 @@ function CreateClass() {
       navigate('/personal-information');
   };
 
+  const handleJoinClass = () => {
+      navigate('/waiting-room');
+  }
+
+  const handleReturnHome = () => {
+      navigate('/');
+  };
+
   return (
     <>
       <RouteLink>
         <HeaderLeft>
-          <Logo src={logoSky} alt="Logo Sky" />
+          <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome}/>
           <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
         </HeaderLeft>
 
@@ -184,12 +192,12 @@ function CreateClass() {
           transition={{ duration: 0.5 }}
           variants={variants}
         >
-          <TitleCreateClass>
+        </motion.div>
+        <TitleCreateClass>
             SKY VIDEO CHAT<br />
             Ứng dụng gọi video trực tuyến hỗ trợ học tập<br />
             Học tập và làm việc online, bắt kịp xu hướng công nghệ
-          </TitleCreateClass>
-        </motion.div>
+        </TitleCreateClass>
 
         <ActionContainer>
           <ButtonCreateClass>
@@ -197,9 +205,9 @@ function CreateClass() {
             Tạo lớp 
           </ButtonCreateClass>
           <InputClassCode placeholder="Nhập mã lớp" />
-          <ButtonJoin>
+          <ButtonJoin onClick={handleJoinClass}>
             <FontAwesomeIcon icon={faSignInAlt} style={{ marginRight: '8px' }} /> 
-            Tham gia
+            Tham gia 
           </ButtonJoin>
         </ActionContainer>
       </BackgroundImg>

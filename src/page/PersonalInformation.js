@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import logoSky from '../images/logo-sky.png';
 import Avata from '../images/avata.jpg';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import DrawerPersonalInformation from './DrawerPersonalInformation';
 import DrawerChangePassword from './DrawerChangePassword';
@@ -164,11 +164,17 @@ function PersonalInformation() {
         }
     };
 
+    const navigate = useNavigate();
+
+    const handleReturnHome = () => {
+        navigate('/');
+    };
+
     return (
         <>
             <RouteLink>
                 <HeaderLeft>
-                    <Logo src={logoSky} alt="Logo Sky" />
+                    <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome}/>
                     <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
                 </HeaderLeft>
             </RouteLink>
