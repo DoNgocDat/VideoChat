@@ -153,6 +153,10 @@ const variants = {
   visible: { opacity: 1, y: 0 }
 };
 
+const generateClassCode = () => {
+  return Math.floor(1000000 + Math.random() * 9000000).toString();
+};
+
 function CreateClass() {
 
   const navigate = useNavigate();
@@ -163,7 +167,12 @@ function CreateClass() {
 
   const handleJoinClass = () => {
       navigate('/waiting-room');
-  }
+  };
+
+  const handleCreateClass = () => {
+      const classCode = generateClassCode();
+      navigate(`/classroom/${classCode}`);
+  };
 
 
   return (
@@ -197,7 +206,7 @@ function CreateClass() {
         </TitleCreateClass>
 
         <ActionContainer>
-          <ButtonCreateClass>
+          <ButtonCreateClass onClick={handleCreateClass}>
             <FontAwesomeIcon icon={faVideo} style={{ marginRight: '8px' }} />
             Tạo lớp 
           </ButtonCreateClass>
