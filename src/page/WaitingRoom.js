@@ -2,6 +2,7 @@ import styled from "styled-components";
 import Background from '../images/Background.jpg';
 import logoSky from '../images/logo-sky.png';
 import Avata from '../images/avata.jpg';
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,6 +11,7 @@ import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from "@fortawe
 
 import React, { useRef , useEffect} from "react";
 import useWebRTC from '../page/useWebRTC';
+// import { Socket } from "socket.io-client";
 
 const BackgroundImg = styled.div`
     position: relative;
@@ -132,7 +134,6 @@ const StyledVideo = styled.video`
     width: 55%;  /* Điều chỉnh kích thước video */
     height: 100%;  /* Đảm bảo video chiếm hết chiều cao khung chứa */
     object-fit: cover;  /* Đảm bảo video giữ đúng kích thước và không bị méo */
-    border: 2px solid #000; /* Có thể thêm viền nếu muốn */
 `;
 
 const ControlButton = styled.button`
@@ -198,10 +199,12 @@ const variants = {
 
 function WaitingRoom() {
     const navigate = useNavigate();
-    const { localStream, startCall } = useWebRTC();
+    const { localStream, startCall, requestJoin } = useWebRTC();
     const localVideoRef = useRef(null);
-    const [isCameraOn, setIsCameraOn] = React.useState(true);
-    const [isMicOn, setIsMicOn] = React.useState(true);
+    // const [classCode, setClassCode] = useState('');
+    const [isCameraOn, setIsCameraOn] = useState(true);
+    const [isMicOn, setIsMicOn] = useState(true);
+    const [isApproved, setIsApproved] = useState(false);  // Trạng thái chờ phê duyệt
 
     useEffect(() => {
       if (localStream) {
@@ -245,6 +248,19 @@ function WaitingRoom() {
       }
     };
 
+    // Hàm yêu cầu tham gia lớp học
+    const handleStartCall = () => {
+      requestJoin();
+    };
+
+    // Điều kiện điều hướng vào phòng học chỉ khi yêu cầu được phê duyệt
+    useEffect(() => {
+      if (isApproved) {
+        navigate(`/classroom/1234567`);
+      }
+    }, [isApproved, navigate]);
+
+    // Hàm rời khỏi phòng chờ
     const handleLeave = () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
@@ -299,7 +315,7 @@ function WaitingRoom() {
 
             <ContentRow>
               <TitleRequestJoin>Sẵn sàng tham gia lớp học?</TitleRequestJoin>
-              <ButtonRequestJoin onClick={startCall}>Yêu cầu tham gia</ButtonRequestJoin>
+              <ButtonRequestJoin onClick={handleStartCall}>Yêu cầu tham gia</ButtonRequestJoin>
             </ContentRow>
           </MainContent>
       </BackgroundImg>
