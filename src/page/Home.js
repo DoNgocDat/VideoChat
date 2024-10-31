@@ -4,6 +4,7 @@ import Banner from '../images/banner.jpg';
 import Content from '../images/content.png';
 import { Link, useNavigate } from "react-router-dom";
 import logoSky from '../images/logo-sky.png';
+import { useEffect, useState } from "react";
 
 const Container = styled.div`
   margin: 100px 20px 20px 20px;
@@ -13,6 +14,13 @@ const Title = styled.h1`
   text-align: center;
   margin: 30px;
   color: #1c0e72;
+
+  span {
+    background-image: linear-gradient(45deg, #ff6b6b, #dc1644, #2c46ea);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
 `;
 
 const BannerImg = styled.img`
@@ -31,6 +39,13 @@ const ContentTitle = styled.p`
   line-height: 2;
   font-weight: 500;
   font-family: revert;
+`;
+
+const BottomTitle = styled.p`
+  line-height: 2;
+  font-weight: 500;
+  font-family: revert;
+  /* color: #ffffff; */
 `;
 
 const ContentTitleCR = styled.p`
@@ -76,31 +91,38 @@ const BottomContact = styled.div`
   width: 34%;
   float: left;
   text-align: center;
+  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const BottomPolicy = styled.div`
   width: 33%;
   float: left;
   text-align: center;
+  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const BottomSocialNetwork = styled.div`
   width: 33%;
   float: left;
   text-align: center;
+  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const RouteLink = styled.nav`
-  background-color: #ffffff;
+  background-image: ${({ scrolled }) => 
+    scrolled 
+      ? "linear-gradient(to bottom, #0077b6, rgba(173, 216, 230, 0.8))"
+      : "linear-gradient(to bottom, #90e0ef, rgba(255, 255, 255, 0.1))"
+  };
+  transition: background-image 0.3s ease;
   padding: 10px;
   position: fixed;
   top: 0;
   width: 100%;
   z-index: 1000;
   height: 50px;
-  box-shadow: 2px 2px 2px #c0deeb;
   display: flex;
-  justify-content: space-between; /* Align avatar and logo properly */
+  justify-content: space-between;
 `;
 
 const HeaderLeft = styled.div`
@@ -139,7 +161,7 @@ const ButtonRegister = styled.button`
   border-radius: 30px;
   border-color: #007aff;
   color: #007aff;
-  box-shadow: 2px 2px 2px #c0deeb;
+  /* box-shadow: 2px 2px 2px #c0deeb; */
   cursor: pointer;
 
   &:hover {
@@ -156,7 +178,7 @@ const ButtonLogin = styled.button`
   border-color: #007aff;
   background-color: #007aff;
   color: #ffffff;
-  box-shadow: 2px 2px 2px #c0deeb;
+  /* box-shadow: 2px 2px 2px #c0deeb; */
   cursor: pointer;
 
   &:hover {
@@ -172,10 +194,19 @@ const variants = {
 
 function Home() {
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <>
-      <RouteLink>
+      <RouteLink scrolled={scrolled}>
         <HeaderLeft>
           <Logo src={logoSky} alt="Logo Sky" /> <br />
           <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
@@ -195,7 +226,9 @@ function Home() {
           transition={{ duration: 0.5 }}
           variants={variants}
         >
-          <Title>Chào mừng bạn đến với SKY VIDEO CHAT!</Title>
+          <Title>
+            Chào mừng bạn đến với <span>SKY VIDEO CHAT!</span>
+          </Title>
         </motion.div>
         <BannerImg src={Banner} alt="Banner" />
 
@@ -237,20 +270,20 @@ function Home() {
           >
             <BottomContact>
               <TitleIntro>Liên hệ</TitleIntro>
-              <ContentTitle>Email: support@skyvideochat.com</ContentTitle>
-              <ContentTitle>Số điện thoại: +84 123 456 789</ContentTitle>
+              <BottomTitle>Email: support@skyvideochat.com</BottomTitle>
+              <BottomTitle>Số điện thoại: +84 123 456 789</BottomTitle>
             </BottomContact>
 
             <BottomPolicy>
               <TitleIntro>Chính sách</TitleIntro>
-              <ContentTitle>Chính sách bảo mật</ContentTitle>
-              <ContentTitle>Điều khoản sử dụng</ContentTitle>
+              <BottomTitle>Chính sách bảo mật</BottomTitle>
+              <BottomTitle>Điều khoản sử dụng</BottomTitle>
             </BottomPolicy>
 
             <BottomSocialNetwork>
               <TitleIntro>Mạng xã hội</TitleIntro>
-              <ContentTitle>Facebook</ContentTitle>
-              <ContentTitle>Linkedin</ContentTitle>
+              <BottomTitle>Facebook</BottomTitle>
+              <BottomTitle>Linkedin</BottomTitle>
             </BottomSocialNetwork>
           </motion.div>
           <br />

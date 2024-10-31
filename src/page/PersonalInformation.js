@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import logoSky from '../images/logo-sky.png';
 import Avata from '../images/avata.jpg';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import DrawerPersonalInformation from './DrawerPersonalInformation';
 import DrawerChangePassword from './DrawerChangePassword';
@@ -137,6 +137,25 @@ function PersonalInformation() {
     const [isEditing, setIsEditing] = useState(false);
     const [isPasswordChanging, setIsPasswordChanging] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
+    const navigate = useNavigate();
+
+    const handleReturnHome = () => {
+        navigate('/');
+    };
+
+    const [userInfo, setUserInfo] = useState({
+        name: "Đỗ Ngọc Đạt",
+        birthDate: "28/04/2003",
+        gender: "Nam",
+        address: "Tỉnh Phú Yên",
+        phone: "0335057747",
+        email: "dongocdat28042003@gmail.com",
+    });
+
+    const [passwordInfo, setPasswordInfo] = useState({
+        username: "dongocdat",
+        password: "12345678",
+    });
 
     const toggleEditing = () => {
         if (isEditing) {
@@ -164,11 +183,16 @@ function PersonalInformation() {
         }
     };
 
+    const handleUpdateInfo = (updatedInfo) => {
+        setUserInfo(updatedInfo);
+        setIsEditing(false);
+    };
+
     return (
         <>
             <RouteLink>
                 <HeaderLeft>
-                    <Logo src={logoSky} alt="Logo Sky" />
+                    <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome} />
                     <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
                 </HeaderLeft>
             </RouteLink>
@@ -186,17 +210,19 @@ function PersonalInformation() {
                 <InfoWrapper>
                     <InfoCard>
                         <InfoTitle>Thông tin cá nhân</InfoTitle>
-                        <InfoText>Họ và tên: Đỗ Ngọc Đạt</InfoText>
-                        <InfoText>Ngày sinh: 28/04/2003</InfoText>
-                        <InfoText>Giới tính: Nam</InfoText>
-                        <InfoText>Địa chỉ: Tỉnh Phú Yên</InfoText>
-                        <InfoText>Số điện thoại: 0335057747</InfoText>
-                        <InfoText>Email: dongocdat28042003@gmail.com</InfoText>
+                        <InfoText>Họ và tên: {userInfo.name}</InfoText>
+                        <InfoText>Ngày sinh: {userInfo.birthDate}</InfoText>
+                        <InfoText>Giới tính: {userInfo.gender}</InfoText>
+                        <InfoText>Địa chỉ: {userInfo.address}</InfoText>
+                        <InfoText>Số điện thoại: {userInfo.phone}</InfoText>
+                        <InfoText>Email: {userInfo.email}</InfoText>
                     </InfoCard>
                     <InfoCard>
                         <InfoTitle>Thông tin tài khoản</InfoTitle>
-                        <InfoText>Tên đăng nhập: dongocdat</InfoText>
-                        <InfoText>Mật khẩu: ********</InfoText>
+                        <InfoText>Tên đăng nhập: {passwordInfo.username}</InfoText>
+                        <InfoText>
+                            Mật khẩu: {passwordInfo.password.replace(/./g, '*')}
+                        </InfoText>
                     </InfoCard>
                 </InfoWrapper>
 
@@ -206,7 +232,7 @@ function PersonalInformation() {
                 </ButtonWrapper>
             </ContentWrapper>
 
-            {isEditing && <DrawerPersonalInformation onClose={toggleEditing} isExiting={isExiting} />}
+            {isEditing && <DrawerPersonalInformation onClose={toggleEditing} isExiting={isExiting} userInfo={userInfo} onUpdateInfo={handleUpdateInfo} />}
             {isPasswordChanging && <DrawerChangePassword onClose={togglePasswordChange} isExiting={isExiting} />}
         </>
     );

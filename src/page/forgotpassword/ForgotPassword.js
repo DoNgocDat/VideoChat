@@ -1,16 +1,18 @@
 import styled from "styled-components";
-import BannerLogin from '../images/banner-login.jpg';
-import LogoSky from '../images/logo-sky.png';
+import BannerLogin from '../../images/banner-login.jpg';
+import LogoSky from '../../images/logo-sky.png';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
+import { useState } from 'react';
+import { forgotPassword } from './services';
 
 const ContentLeft = styled.div`
-  width: 45%;
-  float: left;
-  background-image: url(${BannerLogin});
-  background-position: center;
-  background-size: cover;
-  height: 100vh;
+    width: 45%;
+    float: left;
+    background-image: url(${BannerLogin});
+    background-position: center;
+    background-size: cover;
+    height: 100vh;
 `;
 
 const TitleLogin = styled.h2`
@@ -55,17 +57,17 @@ const Input = styled.input`
     padding: 5px;
 `;
 
-const StyledLink = styled.span`
+const StyledLink = styled(Link)`
+    text-decoration: none;
     color: #007aff;
-    cursor: pointer;
-    margin-top: 0 auto; /* Để nó ngay dưới trường mật khẩu */
-    margin-left: auto; /* Đẩy nó sang bên phải */
-    margin-right: 30%;
+    margin-top: 0 auto;
     display: block;
+    margin-left: auto;
+    margin-right: 30%;
     text-align: right;
 `;
 
-const ButtonLogin = styled.button`
+const ButtonAuthen = styled.button`
     background-color: #007aff;
     color: #ffffff;
     font-size: 15px;
@@ -78,34 +80,35 @@ const ButtonLogin = styled.button`
     cursor: pointer;
 `;
 
-const ContentBottom = styled.p`
-    text-align: center;
-    margin-top: 20px;
-`;
-
-const ContentBottomLink = styled(Link)`
-    text-decoration: none;
-    color: #007aff;
-`;
-
 const variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
-  };
+};
 
-function Login() {
+function PorgotPassword() {
+    const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleForgotPasswordClick = () => {
-        navigate('/forgot-password');
+    const handleAuthenAccountClick = async () => {
+        try {
+            const data = { email };
+            const response = await forgotPassword(data);
+
+            if (response.success) {
+                setMessage("Mã xác nhận đã được gửi đến email của bạn.");
+                // Điều hướng đến trang xác thực
+                navigate('/authen-account');
+            } else {
+                setMessage(response.message || "Có lỗi xảy ra, vui lòng thử lại.");
+            }
+        } catch (error) {
+            setMessage("Có lỗi xảy ra, vui lòng thử lại.");
+        }
     };
 
     const handleReturnHome = () => {
         navigate('/');
-    };
-
-    const handleCreateClass = () => {
-        navigate('/create-class');
     };
 
     return (
@@ -118,20 +121,23 @@ function Login() {
                     transition={{ duration: 0.5 }}
                     variants={variants}
                 >
-                    <TitleLogin>Chào mừng bạn đến với <br /> SKY VIDEO CHAT</TitleLogin>
+                    <TitleLogin>Bạn đừng quá lo lắng <br /> SKY VIDEO CHAT <br /> sẽ giúp bạn lấy lại mật khẩu</TitleLogin>
                 </motion.div>
             </ContentLeft>
             <ContentRight>
                 <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} />
-                <Title>Đăng Nhập</Title>
-                <Input placeholder="Tên đăng nhập"></Input>
-                <Input placeholder="Mật khẩu"></Input>
-                <StyledLink onClick={handleForgotPasswordClick}>Bạn quên mật khẩu?</StyledLink> {/* Thêm sự kiện onClick */}
-                <ButtonLogin onClick={handleCreateClass}>Đăng nhập</ButtonLogin>
-                <ContentBottom>Bạn chưa có tài khoản?<ContentBottomLink to="/register"> Đăng ký</ContentBottomLink></ContentBottom>
+                <Title>Quên Mật Khẩu</Title>
+                <Input 
+                    placeholder="Nhập email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <StyledLink to="/login">Quay lại</StyledLink>
+                <ButtonAuthen onClick={handleAuthenAccountClick}>Xác nhận</ButtonAuthen>
+                {message && <p style={{ color: 'red', textAlign: 'center' }}>{message}</p>}
             </ContentRight>
         </>
     );
 }
 
-export default Login;
+export default PorgotPassword;
