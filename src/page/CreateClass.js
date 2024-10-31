@@ -93,7 +93,7 @@ const UserNameLink = styled(Link)`
 const TitleCreateClass = styled.p`
     position: relative;
     text-align: center;
-    color: #000000;
+    color: #1c0e72;
     font-size: 35px;
     font-weight: 700;
     z-index:100;
@@ -162,29 +162,32 @@ function CreateClass() {
   const navigate = useNavigate();
 
   const handlePersonalInformationClick = () => {
-      navigate('/personal-information');
+    navigate('/personal-information');
   };
 
   const handleJoinClass = () => {
-      navigate('/waiting-room');
+    navigate('/waiting-room');
   };
 
   const handleCreateClass = () => {
-      const classCode = generateClassCode();
-      navigate(`/classroom/${classCode}`);
+    const classCode = generateClassCode();
+    navigate(`/classroom/${classCode}`);
   };
 
+  const handleReturnHome = () => {
+    navigate('/');
+  };
 
   return (
     <>
       <RouteLink>
         <HeaderLeft>
-          <Logo src={logoSky} alt="Logo Sky" />
+          <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome} />
           <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata onClick={handlePersonalInformationClick}/>
+          <ButtonAvata onClick={handlePersonalInformationClick} />
           <UserNameLink to="/personal-information">Đỗ Ngọc Đạt</UserNameLink>
         </HeaderRight>
       </RouteLink>
@@ -197,23 +200,25 @@ function CreateClass() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           variants={variants}
+          style={{ zIndex: 2 }}
         >
-        </motion.div>
-        <TitleCreateClass>
+          <TitleCreateClass>
             SKY VIDEO CHAT<br />
             Ứng dụng gọi video trực tuyến hỗ trợ học tập<br />
             Học tập và làm việc online, bắt kịp xu hướng công nghệ
-        </TitleCreateClass>
+          </TitleCreateClass>
+        </motion.div>
+
 
         <ActionContainer>
           <ButtonCreateClass onClick={handleCreateClass}>
             <FontAwesomeIcon icon={faVideo} style={{ marginRight: '8px' }} />
-            Tạo lớp 
+            Tạo lớp
           </ButtonCreateClass>
           <InputClassCode placeholder="Nhập mã lớp" />
           <ButtonJoin onClick={handleJoinClass}>
-            <FontAwesomeIcon icon={faSignInAlt} style={{ marginRight: '8px' }} /> 
-            Tham gia 
+            <FontAwesomeIcon icon={faSignInAlt} style={{ marginRight: '8px' }} />
+            Tham gia
           </ButtonJoin>
         </ActionContainer>
       </BackgroundImg>

@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from './page/Home';
-import LoginPage from './page/Login';
-import ForgotPassword from './page/ForgotPassword';
+import LoginPage from './page/login/Login';
+import ForgotPassword from './page/forgotpassword/ForgotPassword';
 import AuthenAccount from './page/AuthenAccount';
 import ResetPassword from './page/ResetPassword';
 import CreateClass from './page/CreateClass';
-import RegisterPage from './page/Register';
+import RegisterPage from './page/register/Register';
 import PersonalInformation from './page/PersonalInformation'
 import WaitingRoom from "./page/WaitingRoom";
 import ClassRoom from "./page/ClassRoom";

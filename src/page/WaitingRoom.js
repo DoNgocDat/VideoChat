@@ -101,7 +101,7 @@ const StyledBackLink = styled.span`
     color: #000000;
     cursor: pointer;
     text-decoration: none;
-    font-size: 25px;
+    font-size: 18px;
     font-weight: bold;
     float: left;
     z-index:10;
@@ -171,7 +171,7 @@ const TitleRequestJoin = styled.p`
     z-index: 2;
     text-align: center;
     color: #000000;
-    font-size: 29px;
+    font-size: 22px;
     font-weight: 700;
 `;
 
@@ -183,7 +183,7 @@ const ButtonRequestJoin = styled.button`
     width: 190px;
     border-radius: 30px;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
     margin-right: 20px;
     display: flex;
     justify-content: center;
@@ -251,19 +251,27 @@ function WaitingRoom() {
       }
 
       navigate('/create-class');
-    }
+    };
+
+    const handlePersonalInformation = () =>{
+      navigate('/personal-information');
+    };
+
+    const handleReturnHome = () => {
+      navigate('/');
+    };
 
   return (
     <>
       <RouteLink>
         <HeaderLeft>
-          <Logo src={logoSky} alt="Logo Sky" />
+          <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome}/>
           <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata />
-          <UserNameLink to="/profile">Đỗ Ngọc Đạt</UserNameLink>
+          <ButtonAvata onClick={handlePersonalInformation}/>
+          <UserNameLink to="/personal-information">Đỗ Ngọc Đạt</UserNameLink>
         </HeaderRight>
       </RouteLink>
 
