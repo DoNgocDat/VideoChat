@@ -2,6 +2,7 @@ import styled from "styled-components";
 import Background from '../images/Background.jpg';
 import logoSky from '../images/logo-sky.png';
 import Avata from '../images/avata.jpg';
+import { useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -153,25 +154,36 @@ const variants = {
   visible: { opacity: 1, y: 0 }
 };
 
-const generateClassCode = () => {
-  return Math.floor(1000000 + Math.random() * 9000000).toString();
-};
+// const generateClassCode = () => {
+//   return Math.floor(1000000 + Math.random() * 9000000).toString();
+// };
 
 function CreateClass() {
 
   const navigate = useNavigate();
-
+  const [classCode, setClassCode] = useState('');
   const handlePersonalInformationClick = () => {
       navigate('/personal-information');
   };
 
   const handleJoinClass = () => {
+      // Kiểm tra xem mã lớp có phải là chuỗi 7 chữ số
+      // if (classCode.length !== 7 || !/^\d{7}$/.test(classCode)) {
+      //   setError('Vui lòng nhập mã lớp 7 chữ số');
+      //   return;
+      // }
+
+      if (classCode !== '1234567') {
+        alert('Vui lòng nhập đúng mã lớp 1234567');
+        return;
+      }
       navigate('/waiting-room');
   };
 
   const handleCreateClass = () => {
-      const classCode = generateClassCode();
-      navigate(`/classroom/${classCode}`);
+      // const classCode = generateClassCode();
+      // navigate(`/classroom/${classCode}`);
+      navigate(`/classroom/1234567`);
   };
 
 
@@ -210,7 +222,13 @@ function CreateClass() {
             <FontAwesomeIcon icon={faVideo} style={{ marginRight: '8px' }} />
             Tạo lớp 
           </ButtonCreateClass>
-          <InputClassCode placeholder="Nhập mã lớp" />
+
+          <InputClassCode
+            placeholder="Nhập mã lớp"
+            value={classCode}
+            onChange={(e) => setClassCode(e.target.value)}
+          />
+
           <ButtonJoin onClick={handleJoinClass}>
             <FontAwesomeIcon icon={faSignInAlt} style={{ marginRight: '8px' }} /> 
             Tham gia 

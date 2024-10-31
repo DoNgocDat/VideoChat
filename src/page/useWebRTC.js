@@ -2,79 +2,68 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 
 const useWebRTC = (roomId) => {
-  const [localStream, setLocalStream] = useState(null);        // Luồng video/audio của người dùng hiện tại
-  const [remoteStreams, setRemoteStreams] = useState([]);      // Các luồng video/audio của những người dùng khác
-  const [isConnected, setIsConnected] = useState(false);       // Trạng thái kết nối WebRTC
-  const peerConnections = useRef({});                          // Đối tượng lưu các kết nối WebRTC
-  const socket = useRef(null);                                 // Tham chiếu đến socket.io client
-  const [connectedSocketIds, setConnectedSocketIds] = useState([]); // Lưu socketId đã kết nối
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const peerConnections = useRef({});
+  const socket = useRef(null);
+  // const [connectedSocketIds, setConnectedSocketIds] = useState([]);
 
+  // Lấy luồng localStream và xử lý khi không truy cập được
+  useEffect(() => {
+    if (!localStream) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(setLocalStream)
+        .catch(() => setLocalStream(createSimulatedStream()));
+    }
+  }, [localStream]);
 
-  // Tạo kết nối WebRTC cho người dùng khác
+  // Các hàm WebRTC: Tạo peerConnection và quản lý ICE Candidate
   const createPeerConnection = useCallback((socketId) => {
-    const config = {
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    };
-
+    const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
     const peerConnection = new RTCPeerConnection(config);
 
-    peerConnection.onicecandidate = (event) => {
+    peerConnection.onicecandidate = event => {
       if (event.candidate) {
         socket.current.emit('ice-candidate', { to: socketId, candidate: event.candidate });
       }
     };
 
-    peerConnection.ontrack = (event) => {
+    peerConnection.ontrack = event => {
       const [remoteStream] = event.streams;
-      setRemoteStreams(prevStreams => {
-        if (!prevStreams.some(stream => stream.id === remoteStream.id)) {
-          return [...prevStreams, remoteStream];
-        }
-        return prevStreams;
-      });
+      setRemoteStreams(prevStreams => 
+        !prevStreams.some(stream => stream.id === remoteStream.id) 
+          ? [...prevStreams, remoteStream] 
+          : prevStreams
+      );
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      setIsConnected(peerConnection.connectionState === 'connected');
     };
 
     if (localStream) {
-      localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-      });
-    } else {
-      console.warn("Local stream chưa sẵn sàng để thêm track.");
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
     }
-
-    peerConnection.onconnectionstatechange = () => {
-      console.log("Trạng thái kết nối:", peerConnection.connectionState);
-      if (peerConnection.connectionState === 'connected') {
-        setIsConnected(true);
-      } else if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-        setIsConnected(false);
-      }
-    };
 
     return peerConnection;
   }, [localStream]);
 
-  // Xử lý offer nhận được từ người dùng khác
+  // Các xử lý offer/answer/ICE candidate
   const handleOffer = useCallback((offer, socketId) => {
-    if (!peerConnections.current[socketId]) {
-      const peerConnection = createPeerConnection(socketId);
-      peerConnections.current[socketId] = peerConnection;
-    }
-  
-    const peerConnection = peerConnections.current[socketId];
-    
+    const peerConnection = peerConnections.current[socketId] || createPeerConnection(socketId);
+    peerConnections.current[socketId] = peerConnection;
+
     peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
       .then(() => peerConnection.createAnswer())
       .then(answer => {
         peerConnection.setLocalDescription(answer);
         socket.current.emit('answer', { to: socketId, answer });
       })
-      .catch(error => {
-        console.error("Lỗi khi xử lý offer: ", error);
-      });
+      .catch(console.error);
   }, [createPeerConnection]);
 
-  // Xử lý answer nhận được từ người dùng khác
   const handleAnswer = useCallback((answer, socketId) => {
     const peerConnection = peerConnections.current[socketId];
     if (peerConnection) {
@@ -82,82 +71,67 @@ const useWebRTC = (roomId) => {
     }
   }, []);
 
-  // Xử lý ICE candidate nhận được từ người dùng khác
   const handleIceCandidate = useCallback(({ candidate, socketId }) => {
     const peerConnection = peerConnections.current[socketId];
     if (peerConnection && candidate) {
-      peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-        .catch(error => console.error("Error adding received ice candidate", error));
+      peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
     }
   }, []);
 
-  // Kết nối socket.io và xử lý các sự kiện WebRTC khi component được mount
+  // Khởi tạo và quản lý socket kết nối
   useEffect(() => {
     socket.current = io.connect('http://localhost:3000');
-
-    if (!localStream) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          setLocalStream(stream);
-        })
-        .catch((error) => {
-          console.error("Lỗi khi truy cập camera/microphone:", error);
-        });
-    }
-
-    // Tham gia vào phòng và lắng nghe các sự kiện
-    socket.current.on('join-room', (socketId) => {
-      console.log(`Đã tham gia phòng với socketId: ${socketId}`);
-      setConnectedSocketIds((prev) => [...prev, socketId]); // Lưu lại socketId
-    });
 
     socket.current.on('offer', handleOffer);
     socket.current.on('answer', handleAnswer);
     socket.current.on('ice-candidate', handleIceCandidate);
-
-    socket.current.on('disconnect', () => {
-      console.log("Ngắt kết nối với signaling server");
-      setIsConnected(false);
-    });
+    
+    // Xử lý yêu cầu tham gia và phản hồi phê duyệt/từ chối
+    socket.current.on('join-approved', () => setIsApproved(true));
+    socket.current.on('join-rejected', () => alert("Yêu cầu tham gia đã bị từ chối."));
+    socket.current.on('disconnect', () => setIsConnected(false));
 
     const currentPeerConnections = peerConnections.current;
+
+    // Cleanup function
     return () => {
       Object.values(currentPeerConnections).forEach(peerConnection => {
         if (peerConnection) peerConnection.close();
       });
-      socket.current.disconnect();
+      if (socket.current) {
+        socket.current.disconnect();
+      }
     };
-  }, [handleOffer, handleAnswer, handleIceCandidate, localStream]);
+  }, [handleOffer, handleAnswer, handleIceCandidate]);
 
-  // Hàm lấy peerConnection theo socketId
-  const getPeerConnection = useCallback((socketId) => {
-    return peerConnections.current[socketId] || null;
-  }, []);
+  // Quản lý yêu cầu tham gia vào phòng
+  const requestJoin = useCallback(() => {
+    socket.current.emit('request-join', { roomId });
+  }, [roomId]);
 
-  useEffect(() => {
-    if (Object.keys(peerConnections.current).length > 0) {
-      const socketIds = Object.keys(peerConnections.current);
-      socketIds.forEach((socketId) => {
-        const peerConnection = getPeerConnection(socketId);
-        if (peerConnection) {
-          console.log("PeerConnection sẵn sàng cho socketId:", socketId, peerConnection);
-        } else {
-          console.warn("PeerConnection chưa sẵn sàng cho socketId:", socketId);
-        }
-      });
-    } else {
-      console.warn("Chưa có PeerConnection nào được khởi tạo.");
-    }
-    console.log("Is Connected: ", isConnected);
-  }, [isConnected]);
-
-  // Hàm để bắt đầu tham gia vào phòng gọi
   const startCall = useCallback(() => {
     socket.current.emit('join-room', roomId);
   }, [roomId]);
 
+  // Hàm để tạo stream giả lập khi không thể truy cập camera/microphone
+  const createSimulatedStream = () => {
+    const simulatedStream = new MediaStream();
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'gray';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    simulatedStream.addTrack(canvas.captureStream().getVideoTracks()[0]);
+
+    const audioContext = new AudioContext();
+    simulatedStream.addTrack(audioContext.createMediaStreamDestination().stream.getAudioTracks()[0]);
+
+    return simulatedStream;
+  };
+
   // Trả về các giá trị cần sử dụng trong component khác
-  return { localStream, remoteStreams, startCall, getPeerConnection, isConnected, connectedSocketIds };
+  return { localStream, remoteStreams, startCall, requestJoin, isConnected, isApproved };
 };
 
 export default useWebRTC;

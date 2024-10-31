@@ -8,6 +8,7 @@ import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash,
          faSearch, faStop } from '@fortawesome/free-solid-svg-icons';
 
 import useWebRTC from '../page/useWebRTC';
+import socket from 'socket.io-client'
 
 const Container = styled.div`
   display: flex;
@@ -170,6 +171,43 @@ const FindButton = styled.button`
   }
 `;
 
+const JoinRequestsContainer = styled.div`
+  max-height: 100px; /* Giới hạn chiều cao để hiển thị tối đa 3 yêu cầu */
+  overflow-y: auto;
+  margin-top: 10px; /* Khoảng cách so với khung tìm kiếm */
+  padding: 5px;
+  border-top: 1px solid #ddd;
+`;
+
+const RequestList = styled.ul`
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const RequestItem = styled.li`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+`;
+
+const Button = styled.button`
+  margin-left: 5px;
+  padding: 3px 6px;
+  background-color: #4CAF50; /* Màu xanh cho nút phê duyệt */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  &:hover {
+    background-color: #45a049;
+  }
+  &:nth-child(2) {
+    background-color: #f44336; /* Màu đỏ cho nút từ chối */
+  }
+`;
+
 
 function ClassRoom() {
   const { classCode } = useParams(); // Lấy mã lớp từ URL
@@ -184,6 +222,8 @@ function ClassRoom() {
     
   // Trạng thái để theo dõi khi người dùng đang chia sẻ màn hình
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [joinRequests, setJoinRequests] = useState([]);
+
 
   // Khi luồng local hoặc remote thay đổi, gán nó vào phần tử video
   useEffect(() => {
@@ -227,6 +267,30 @@ function ClassRoom() {
       window.removeEventListener('beforeunload', stopMediaTracks);
     };
   }, [localStream]);    
+
+  useEffect(() => {
+    if (socket.current) { // Kiểm tra nếu socket.current đã tồn tại
+      socket.current.on('request-join', ({ roomId, userId }) => {
+        console.log(`Người dùng ${userId} yêu cầu tham gia phòng ${roomId}`);
+        setJoinRequests(prevRequests => [...prevRequests, { roomId, userId }]);
+      });
+    } else {
+      console.error("Socket chưa được khởi tạo.");
+    }
+  }, []);  
+
+  const handleApproveRequest = (userId) => {
+    // Gửi sự kiện 'approve-join' qua socket.io
+    socket.current.emit('approve-join', { userId });
+    // Xóa yêu cầu đã phê duyệt khỏi danh sách
+    setJoinRequests(prevRequests => prevRequests.filter(request => request.userId !== userId));
+  };
+  
+  const handleRejectRequest = (userId) => {
+    // Từ chối yêu cầu tham gia (ở đây chỉ cần xóa yêu cầu khỏi danh sách)
+    setJoinRequests(prevRequests => prevRequests.filter(request => request.userId !== userId));
+  };
+  
 
   // Hàm bật/tắt camera
   const toggleCamera = () => {
@@ -416,6 +480,21 @@ const toggleScreenShare = async () => {
             </FindButton>
 
           </FindContainer>
+          {/* Hiển thị yêu cầu tham gia nếu có */}
+          {joinRequests.length > 0 && (
+            <JoinRequestsContainer>
+              <HeaderPanel>Yêu cầu tham gia</HeaderPanel>
+              <RequestList>
+                {joinRequests.slice(0, 3).map(request => (
+                  <RequestItem key={request.userId}>
+                    Người dùng {request.userId}
+                    <Button onClick={() => handleApproveRequest(request.userId)}>Phê duyệt</Button>
+                    <Button onClick={() => handleRejectRequest(request.userId)}>Từ chối</Button>
+                  </RequestItem>
+                ))}
+              </RequestList>
+            </JoinRequestsContainer>
+          )}
         </FloatingPanel>
       )}
 

@@ -23,7 +23,7 @@ function App() {
         <Route path="/register" element={<RegisterPage/>}/>
         <Route path="/personal-information" element={<PersonalInformation/>}/>
         <Route path="/waiting-room" element={<WaitingRoom/>} />
-        <Route path="/classroom/:classCode" element={<ClassRoom/>}/>
+        <Route path="/classroom/1234567" element={<ClassRoom/>}/>
       </Routes>
     </BrowserRouter>
   );
