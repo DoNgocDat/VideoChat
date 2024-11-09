@@ -2,10 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, 
-         faChalkboard, faHandPaper, faSignOutAlt, 
-         faUsers, faComments, faClipboardList, faCrown, 
-         faSearch, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, faHandPaper, faSignOutAlt, 
+         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop } from '@fortawesome/free-solid-svg-icons';
 
 import useWebRTC from '../page/useWebRTC';
 import socket from 'socket.io-client'
@@ -15,31 +13,56 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   height: 100vh;
-  background-color: #37474F; /* Background tối */
+  background-color: #2C2F33; /* Background tối */
   color: #edf2f4; /* Màu chữ dễ nhìn */
 `;
 
 const VideoContainer = styled.div`
-    width: 75%;
-    height: 350px;
+    width: ${(props) => (props.activePanel ? '70%' : '75%')}; /* Giảm kích thước khi FloatingPanel hiển thị */
+    height: 650px;
     display: flex;
-    justify-content: space-around;
+    justify-content: ${(props) => 
+        props.activePanel ? 'flex-start' : 
+        props.isScreenSharing ? 'center' : 
+        'space-around'
+    };
     align-items: center;
-    margin-bottom: 20px; /* Khoảng cách phía dưới video */
-    margin-top: 150px; 
+    margin-top: 30px; 
+    margin-right: ${(props) => (props.activePanel ? '25%' : '0')}; /* Thêm khoảng cách để đẩy video sang trái */
+    position: relative; /* Sử dụng vị trí tương đối để điều chỉnh vị trí các video */
+    // overflow: hidden; /* Ngăn nội dung tràn ra ngoài */
 `;
 
 const StyledVideo = styled.video`
-    width: 55%;  /* Điều chỉnh kích thước video */
-    height: 100%;  /* Đảm bảo video chiếm hết chiều cao khung chứa */
-    object-fit: cover;  /* Đảm bảo video giữ đúng kích thước và không bị méo */
+    position: absolute;
+    width: ${(props) => (props.isScreenSharing ? '20%' : '100%')}; /* Thu nhỏ khi chia sẻ màn hình */
+    height: ${(props) => (props.isScreenSharing ? '20%' : '103%')};
+    bottom: ${(props) => (props.isScreenSharing ? '10px' : '0')}; /* Đặt cách lề dưới khi chia sẻ màn hình */
+    right: ${(props) => (props.isScreenSharing ? '10px' : 'auto')}; /* Đặt cách lề phải khi chia sẻ màn hình */
+    object-fit: cover;
+    border-radius: 10px;
+    display: ${(props) => (props.isScreenSharing ? 'block' : 'inline')};
+    z-index: ${(props) => (props.isScreenSharing ? '1' : 'auto')}; /* Đảm bảo hiển thị lên trên màn hình chia sẻ */
+`;
+
+const SharedScreenVideo = styled.video`
+  width: ${(props) => (props.isScreenSharing ? '100%' : '0')}; /* Chiếm hết VideoContainer khi chia sẻ */
+  height: ${(props) => (props.isScreenSharing ? '100%' : '0')}; /* Chiếm hết VideoContainer khi chia sẻ */
+  object-fit: contain;
+  border-radius: 10px;
+  display: ${(props) => (props.isScreenSharing ? 'block' : 'none')}; /* Chỉ hiển thị khi đang chia sẻ màn hình */
+  position: absolute; /* Cố định video */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 `;
 
 const MainControl = styled.div`
   display: flex;
   justify-content: space-between;
   width: 90%;
-  padding: 30px;
+  padding: 10px;
   border-radius: 10px;
   color: white;
   margin-top: auto;
@@ -124,10 +147,10 @@ const ButtonControl = styled.button`
 
 const FloatingPanel = styled.div`
   position: absolute;
-  top: 20px;
+  top: 10px;
   right: 20px;
   width: 22%;
-  height: 80%;
+  height: 82.5%;
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -137,9 +160,9 @@ const FloatingPanel = styled.div`
 `;
 
 const HeaderPanel = styled.span`
-  font-size: 27px;
+  font-size: 20px;
   margin-right: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: #333;
 `;
 
@@ -208,6 +231,43 @@ const Button = styled.button`
   }
 `;
 
+const SwitchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 100%; 
+`;
+
+const Label = styled.span`
+  margin-right: 8px;
+  color: #000000;
+  flex-grow: 1;
+`;
+
+const Switch = styled.div`
+  position: relative;
+  width: 36px;
+  height: 18px;
+  background-color: ${(props) => (props.checked ? '#007aff' : '#cccccc')};
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${(props) => (props.checked ? '18px' : '2px')};
+    width: 14px;
+    height: 14px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: left 0.3s;
+  }
+`;
+
 
 function ClassRoom() {
   const { classCode } = useParams(); // Lấy mã lớp từ URL
@@ -223,6 +283,9 @@ function ClassRoom() {
   // Trạng thái để theo dõi khi người dùng đang chia sẻ màn hình
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
+
+  const [allowMic, setAllowMic] = useState(false);
+  const [allowChat, setAllowChat] = useState(false);
 
 
   // Khi luồng local hoặc remote thay đổi, gán nó vào phần tử video
@@ -316,17 +379,17 @@ function ClassRoom() {
   };
 
   // Hàm toggle chia sẻ màn hình
-const toggleScreenShare = async () => {
-  if (isScreenSharing) {
-    // Nếu đang chia sẻ màn hình, dừng chia sẻ
-    stopScreenShare();
-    setIsScreenSharing(false);
-  } else {
-    // Nếu chưa chia sẻ, bắt đầu chia sẻ màn hình
-    await shareScreen();
-    setIsScreenSharing(true);
-  }
-};
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      // Nếu đang chia sẻ màn hình, dừng chia sẻ
+      stopScreenShare();
+      setIsScreenSharing(false);
+    } else {
+      // Nếu chưa chia sẻ, bắt đầu chia sẻ màn hình
+      await shareScreen();
+      setIsScreenSharing(true);
+    }
+  };
 
   // Hàm xử lý hiển thị màn hình chia sẻ
   const handleScreenShare = (screenStream) => {
@@ -394,6 +457,9 @@ const toggleScreenShare = async () => {
     }
   };
 
+  const toggleAllowMic = () => setAllowMic(!allowMic);
+  const toggleAllowChat = () => setAllowChat(!allowChat);
+
   // Hàm thoát phòng học
   const handleLeaveClass = () => {
     if (localStream) {
@@ -405,8 +471,8 @@ const toggleScreenShare = async () => {
 
   return (
     <Container>
-      <VideoContainer>
-        <StyledVideo ref={localVideoRef} autoPlay muted playsInline style={{ borderRadius: '10px'}}/>
+      <VideoContainer activePanel={activePanel} isScreenSharing={isScreenSharing}>
+        <StyledVideo ref={localVideoRef} autoPlay muted playsInline isScreenSharing={isScreenSharing} />
         {/* <StyledVideo ref={remoteVideoRef} autoPlay playsInline style={{ borderRadius: '10px'}}/> */}
         {remoteStreams.length > 0 ? (
           remoteStreams.map((stream, index) => (
@@ -419,12 +485,13 @@ const toggleScreenShare = async () => {
               autoPlay 
               playsInline 
               style={{ borderRadius: '10px', display: stream ? 'block' : 'none' }}
+              isScreenSharing={isScreenSharing}
             />
           ))
         ) : null}
 
         {/* Video để xem màn hình được chia sẻ */}
-        <StyledVideo id="sharedScreen" autoPlay playsInline style={{ borderRadius: '10px', display: 'none' }} />
+        <SharedScreenVideo id="sharedScreen" autoPlay playsInline isScreenSharing={isScreenSharing} />
       </VideoContainer>
       
       <MainControl>
@@ -435,35 +502,35 @@ const toggleScreenShare = async () => {
 
         {/* Center: Control Buttons */}
         <CenterPanel>
-          <ButtonControlCM onClick={toggleCamera} isOn={isCameraOn}>
+          <ButtonControlCM onClick={toggleCamera} isOn={isCameraOn} title='Bật/Tắt Camera'>
             <FontAwesomeIcon icon={isCameraOn ? faVideo : faVideoSlash} />
           </ButtonControlCM>
-          <ButtonControlCM onClick={toggleMic} isOn={isMicOn}>
+          <ButtonControlCM onClick={toggleMic} isOn={isMicOn} title='Bật/Tắt Mic'>
             <FontAwesomeIcon icon={isMicOn ? faMicrophone : faMicrophoneSlash} />
           </ButtonControlCM>
-          <ButtonControl onClick={toggleScreenShare}>
+          <ButtonControl onClick={toggleScreenShare} title='Bật/Tắt Chia sẻ màn hình'>
             <FontAwesomeIcon icon={isScreenSharing ? faStop : faChalkboard} />
           </ButtonControl>
-          <ButtonControl>
+          <ButtonControl title='Giơ tay'>
             <FontAwesomeIcon icon={faHandPaper} />
           </ButtonControl>
-          <ButtonControl onClick={handleLeaveClass}>
+          <ButtonControl onClick={handleLeaveClass} title='Rời khỏi lớp'>
             <FontAwesomeIcon icon={faSignOutAlt} />
           </ButtonControl>
         </CenterPanel>
 
         {/* Right: Additional Features */}
         <RightPanel>
-        <ButtonFeature onClick={() => togglePanel('participants')}>
+        <ButtonFeature onClick={() => togglePanel('participants')} title='Danh sách học viên'>
           <FontAwesomeIcon icon={faUsers} />
         </ButtonFeature>
-        <ButtonFeature onClick={() => togglePanel('chat')}>
+        <ButtonFeature onClick={() => togglePanel('chat')} title='Chat'>
           <FontAwesomeIcon icon={faComments} />
         </ButtonFeature>
-        <ButtonFeature onClick={() => togglePanel('attendance')}>
+        <ButtonFeature onClick={() => togglePanel('attendance')} title='Điểm danh'>
           <FontAwesomeIcon icon={faClipboardList} />
         </ButtonFeature>
-        <ButtonFeature onClick={() => togglePanel('owner')}>
+        <ButtonFeature onClick={() => togglePanel('owner')} title='Bộ điều khiển'>
           <FontAwesomeIcon icon={faCrown} />
         </ButtonFeature>
         </RightPanel>
@@ -519,6 +586,17 @@ const toggleScreenShare = async () => {
         <FloatingPanel>
           <HeaderPanel>Bộ điều khiển</HeaderPanel>
           
+          {/* Cho phép mọi người bật mic */}
+          <SwitchContainer onClick={toggleAllowMic}>
+            <Label>Cho phép mọi người bật mic</Label>
+            <Switch checked={allowMic} />
+          </SwitchContainer>
+
+          {/* Cho phép mọi người chat */}
+          <SwitchContainer onClick={toggleAllowChat}>
+            <Label>Cho phép mọi người chat</Label>
+            <Switch checked={allowChat} />
+          </SwitchContainer>
         </FloatingPanel>
       )}
     </Container>
