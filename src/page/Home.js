@@ -1,22 +1,25 @@
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Banner from '../images/banner.jpg';
 import Content from '../images/content.png';
 import { Link, useNavigate } from "react-router-dom";
 import logoSky from '../images/logo-sky.png';
 import { useEffect, useState } from "react";
+import PrivacyPolicyContent from "./PrivacyPolicyContent";
+import TermsOfUse from './TermsOfUse';
 
 const Container = styled.div`
   margin: 100px 20px 20px 20px;
+  /* background-color: #E0F7FA;  */
 `;
 
 const Title = styled.h1`
   text-align: center;
   margin: 30px;
-  color: #1c0e72;
+  color: #0288D1; /* Màu xanh dương đậm hơn cho tiêu đề */
 
   span {
-    background-image: linear-gradient(45deg, #ff6b6b, #dc1644, #2c46ea);
+    background-image: linear-gradient(45deg, #81D4FA, #0288D1, #2c46ea);
     color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
@@ -32,20 +35,22 @@ const BannerImg = styled.img`
 
 const TitleIntro = styled.h3`
   font-weight: 700;
-  color: #1c0e72;
+  color: #0288D1; /* Xanh đậm */
 `;
 
 const ContentTitle = styled.p`
   line-height: 2;
   font-weight: 500;
   font-family: revert;
+  color: #333; /* Màu xám đậm cho văn bản chính */
 `;
 
 const BottomTitle = styled.p`
   line-height: 2;
   font-weight: 500;
   font-family: revert;
-  /* color: #ffffff; */
+  color: #333;
+  cursor: pointer;
 `;
 
 const ContentTitleCR = styled.p`
@@ -53,6 +58,7 @@ const ContentTitleCR = styled.p`
   font-weight: 500;
   font-family: revert;
   text-align: center;
+  color: #0288D1; /* Màu xanh chủ đề */
 `;
 
 const ContainerContent = styled.div`
@@ -91,28 +97,25 @@ const BottomContact = styled.div`
   width: 34%;
   float: left;
   text-align: center;
-  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const BottomPolicy = styled.div`
   width: 33%;
   float: left;
   text-align: center;
-  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const BottomSocialNetwork = styled.div`
   width: 33%;
   float: left;
   text-align: center;
-  /* background-image: linear-gradient(to top, #90e0ef, rgba(255, 255, 255, 0.1)) */
 `;
 
 const RouteLink = styled.nav`
-  background-image: ${({ scrolled }) => 
-    scrolled 
-      ? "linear-gradient(to bottom, #0077b6, rgba(173, 216, 230, 0.8))"
-      : "linear-gradient(to bottom, #90e0ef, rgba(255, 255, 255, 0.1))"
+  background-image: ${({ scrolled }) =>
+    scrolled
+      ? "linear-gradient(to bottom, #0288D1, rgba(173, 216, 230, 0.8))"
+      : "linear-gradient(to bottom, #81D4FA, rgba(255, 255, 255, 0.1))"
   };
   transition: background-image 0.3s ease;
   padding: 10px;
@@ -139,14 +142,14 @@ const HeaderRight = styled.div`
 
 const Logo = styled.img`
   position: absolute;
-  top: 5px; /* Adjust to position logo on top of text */
+  top: 5px;
   z-index: 3;
-  width: 100px; /* Adjust size as needed */
+  width: 100px;
   height: auto;
 `;
 
 const StyledLink = styled(Link)`
-  color: #1c0e72;
+  color: #0288D1;
   text-decoration: none;
   font-size: 15px;
   font-weight: bold;
@@ -159,14 +162,14 @@ const ButtonRegister = styled.button`
   height: 25px;
   width: 90px;
   border-radius: 30px;
-  border-color: #007aff;
-  color: #007aff;
-  /* box-shadow: 2px 2px 2px #c0deeb; */
+  border: 2px solid #0288D1; /* Đổi màu viền */
+  color: #0288D1;
   cursor: pointer;
+  background-color: transparent;
 
   &:hover {
-    background-color: #c0deeb;
-    border-color: #c0deeb;
+    background-color: #81D4FA;
+    color: #ffffff;
   }
 `;
 
@@ -175,16 +178,44 @@ const ButtonLogin = styled.button`
   height: 25px;
   width: 90px;
   border-radius: 30px;
-  border-color: #007aff;
-  background-color: #007aff;
+  background-color: #0288D1;
   color: #ffffff;
-  /* box-shadow: 2px 2px 2px #c0deeb; */
   cursor: pointer;
 
   &:hover {
     background-color: #489cd3;
-    border-color: #489cd3;
   }
+`;
+
+// Styled component cho nền của modal
+const ModalBackground = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalContent = styled(motion.div)` // Thêm motion.div để có hiệu ứng
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 620px;
+`;
+
+const ModalButton = styled.button`
+    background-color: #0288D1;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
 `;
 
 const variants = {
@@ -195,6 +226,8 @@ const variants = {
 function Home() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [showModalPrivacyPolicy, setshowModalPrivacyPolicy] = useState(false)
+  const [showModalTermsOfUse, setShowModalTermsOfUse] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -203,6 +236,22 @@ function Home() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const closeModalPrivacyPolicy = () => {
+    setshowModalPrivacyPolicy(false); // Đóng modal
+  };
+
+  const openeModalPrivacyPolicy = () => {
+    setshowModalPrivacyPolicy(true); // Mở modal
+  };
+
+  const closeModalTermsOfUse = () => {
+    setShowModalTermsOfUse(false)
+  }
+
+  const openModalTermsOfUse = () => {
+    setShowModalTermsOfUse(true)
+  }
 
   return (
     <>
@@ -276,8 +325,8 @@ function Home() {
 
             <BottomPolicy>
               <TitleIntro>Chính sách</TitleIntro>
-              <BottomTitle>Chính sách bảo mật</BottomTitle>
-              <BottomTitle>Điều khoản sử dụng</BottomTitle>
+              <BottomTitle onClick={openeModalPrivacyPolicy}>Chính sách bảo mật</BottomTitle>
+              <BottomTitle onClick={openModalTermsOfUse}>Điều khoản sử dụng</BottomTitle>
             </BottomPolicy>
 
             <BottomSocialNetwork>
@@ -289,8 +338,35 @@ function Home() {
           <br />
         </BottomSection>
         <ContentTitleCR>© 2024 Sky Video Chat. Bản quyền thuộc về Sky Video Chat</ContentTitleCR>
-
       </Container>
+
+      <AnimatePresence>
+        {showModalPrivacyPolicy && (
+          <ModalBackground>
+            <ModalContent
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+            >
+              <PrivacyPolicyContent></PrivacyPolicyContent>
+              <ModalButton onClick={closeModalPrivacyPolicy}>Đóng</ModalButton>
+            </ModalContent>
+          </ModalBackground>
+        )}
+        {showModalTermsOfUse && (
+          <ModalBackground>
+            <ModalContent initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TermsOfUse />
+              <ModalButton onClick={closeModalTermsOfUse}>Đóng</ModalButton>
+            </ModalContent>
+          </ModalBackground>
+        )}
+      </AnimatePresence>
     </>
   );
 }

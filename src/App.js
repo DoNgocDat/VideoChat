@@ -3,10 +3,10 @@ import HomePage from './page/Home';
 import LoginPage from './page/login/Login';
 import ForgotPassword from './page/forgotpassword/ForgotPassword';
 import AuthenAccount from './page/AuthenAccount';
-import ResetPassword from './page/ResetPassword';
-import CreateClass from './page/CreateClass';
+import ResetPassword from './page/ResetPassword/ResetPassword';
+import CreateClass from './page/CreateClass/CreateClass';
 import RegisterPage from './page/register/Register';
-import PersonalInformation from './page/PersonalInformation'
+import PersonalInformation from './page/PersonnalInformation/PersonalInformation'
 import WaitingRoom from "./page/WaitingRoom";
 import ClassRoom from "./page/ClassRoom";
 

@@ -42,7 +42,7 @@ const LogoSkyImg = styled.img`
 
 const Title = styled.p`
     text-align: center;
-    color: #007aff;
+    color: #0288D1;
     font-size: 35px;
     font-weight: 620;
 `;
@@ -69,7 +69,7 @@ const StyledLink = styled.span`
 `;
 
 const ButtonLogin = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;
     color: #ffffff;
     font-size: 15px;
     margin: 20px auto;
@@ -118,7 +118,7 @@ const ModalContent = styled(motion.div)` // Thêm motion.div để có hiệu �
 `;
 
 const ModalButton = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;
     color: #ffffff;
     border: none;
     padding: 10px 20px;
@@ -148,7 +148,17 @@ function Login() {
             console.log(response);
 
             if (response && response.access_token) {
-                navigate('/create-class');
+                const userId = extractUserIdFromToken(response.access_token); // Gọi hàm để lấy ID
+
+                if (userId) {
+                    console.log('Lấy ID người dùng thành công:', userId); // Thông báo thành công
+                    localStorage.setItem('userId', userId); // Lưu ID vào localStorage
+                    localStorage.setItem('access_token', response.access_token); // Lưu token nếu cần
+                    navigate('/create-class');
+                } else {
+                    console.log('Không thể lấy ID từ token'); // Thông báo không thành công
+                    setShowModal(true);
+                }
             } else {
                 setShowModal(true); // Hiển thị modal khi đăng nhập thất bại
             }
@@ -156,6 +166,12 @@ function Login() {
             console.error('Đăng nhập thất bại:', error);
             setShowModal(true); // Hiển thị modal khi có lỗi
         }
+    };
+
+    // Hàm để lấy user_id từ token
+    const extractUserIdFromToken = (token) => {
+        const payload = JSON.parse(atob(token.split('.')[1])); // Giải mã payload từ token
+        return payload.id; // Giả định rằng ID người dùng nằm trong payload
     };
 
     const handleKeyDown = (event) => {

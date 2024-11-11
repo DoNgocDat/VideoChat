@@ -1,12 +1,13 @@
 import styled from "styled-components";
-import Background from '../images/Background.jpg';
-import logoSky from '../images/logo-sky.png';
-import Avata from '../images/avata.jpg';
-import { useState } from 'react';
+import Background from '../../images/Background.jpg';
+import logoSky from '../../images/logo-sky.png';
+import Avata from '../../images/avata.jpg';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
+import { getUserInfo } from './services';
 
 const BackgroundImg = styled.div`
     position: relative;
@@ -65,7 +66,7 @@ const Logo = styled.img`
 `;
 
 const StyledLink = styled(Link)`
-    color: #1c0e72;
+    color: #0288D1;;
     text-decoration: none;
     font-size: 15px;
     font-weight: bold;
@@ -87,14 +88,14 @@ const ButtonAvata = styled.button`
 
 const UserNameLink = styled(Link)`
     text-decoration: none;
-    color: #1c0e72;
+    color: #0288D1;;
     font-size: 18px;
 `;
 
 const TitleCreateClass = styled.p`
     position: relative;
     text-align: center;
-    color: #1c0e72;
+    color: #0288D1;;
     font-size: 35px;
     font-weight: 700;
     z-index:100;
@@ -110,7 +111,7 @@ const ActionContainer = styled.div`
 `;
 
 const ButtonCreateClass = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;;
     color: #ffffff;
     border: none;
     height: 40px;
@@ -137,8 +138,8 @@ const InputClassCode = styled.input`
 
 const ButtonJoin = styled.button`
     background-color: #ffffff;
-    color: #007aff;
-    border: 2px solid #007aff;
+    color: #0288D1;;
+    border: 2px solid #0288D1;;
     height: 40px;
     width: 180px;
     border-radius: 30px;
@@ -154,32 +155,100 @@ const variants = {
   visible: { opacity: 1, y: 0 }
 };
 
+// Styled component cho nền của modal
+const ModalBackground = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalContent = styled(motion.div)` // Thêm motion.div để có hiệu ứng
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+`;
+
+const ModalButton = styled.button`
+    background-color: #0288D1;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+`;
+
 // const generateClassCode = () => {
 //   return Math.floor(1000000 + Math.random() * 9000000).toString();
 // };
 
 function CreateClass() {
-
+  const [userId, setUserId] = useState(null);
+  const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
   const navigate = useNavigate();
   const [classCode, setClassCode] = useState('');
+  const [showModal, setShowModal] = useState(false); // State cho modal
+
+  // Lấy userId từ localStorage
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      setUserId(storedUserId);
+      console.log('Lấy ID người dùng thành công:', storedUserId); // Thông báo thành công
+    } else {
+      console.error('Không tìm thấy userId trong localStorage');
+      // Có thể điều hướng về trang login nếu không có userId
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Lấy thông tin người dùng khi userId thay đổi
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const data = await getUserInfo(userId);
+        setUserInfo({
+          name: data.fullName,
+        });
+      } catch (error) {
+        console.error('Không thể lấy thông tin người dùng:', error);
+      }
+    };
+
+    if (userId) {
+      fetchUserInfo();
+    }
+  }, [userId]);
+
   const handlePersonalInformationClick = () => {
     navigate('/personal-information');
   };
 
   const handleJoinClass = () => {
 
-      if (classCode !== '1234567') {
-        alert('Vui lòng nhập đúng mã lớp 1234567');
-        return;
-      }
-      navigate('/waiting-room');
+    if (classCode !== '1234567') {
+      setShowModal(true);
+      return;
+    }
+    navigate('/waiting-room');
   };
 
+  const closeModal = () => {
+    setShowModal(false); // Đóng modal
+};
+
   const handleCreateClass = () => {
-      // const classCode = generateClassCode();
-      // navigate(`/classroom/${classCode}`);
-      navigate(`/classroom/1234567`);
-   
+    // const classCode = generateClassCode();
+    // navigate(`/classroom/${classCode}`);
+    navigate(`/classroom/1234567`);
+
   };
 
   const handleReturnHome = () => {
@@ -196,7 +265,7 @@ function CreateClass() {
 
         <HeaderRight>
           <ButtonAvata onClick={handlePersonalInformationClick} />
-          <UserNameLink to="/personal-information">Đỗ Ngọc Đạt</UserNameLink>
+          <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
         </HeaderRight>
       </RouteLink>
 
@@ -217,7 +286,6 @@ function CreateClass() {
           </TitleCreateClass>
         </motion.div>
 
-
         <ActionContainer>
           <ButtonCreateClass onClick={handleCreateClass}>
             <FontAwesomeIcon icon={faVideo} style={{ marginRight: '8px' }} />
@@ -235,6 +303,24 @@ function CreateClass() {
             Tham gia
           </ButtonJoin>
         </ActionContainer>
+
+        <AnimatePresence>
+          {showModal && (
+            <ModalBackground>
+              <ModalContent
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3>Tham gia thất bại</h3>
+                <p>Nhập mã 1234567 để vào lớp học.</p>
+                <ModalButton onClick={closeModal}>Đóng</ModalButton>
+              </ModalContent>
+            </ModalBackground>
+          )}
+        </AnimatePresence>
+
       </BackgroundImg>
     </>
   );

@@ -41,7 +41,7 @@ const LogoSkyImg = styled.img`
 
 const Title = styled.p`
     text-align: center;
-    color: #007aff;
+    color: #0288D1;
     font-size: 35px;
     font-weight: 620;
 `;
@@ -68,7 +68,7 @@ const StyledLink = styled(Link)`
 `;
 
 const ButtonAuthen = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;
     color: #ffffff;
     font-size: 15px;
     margin: 20px auto;
@@ -90,19 +90,27 @@ function PorgotPassword() {
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
+    // forgotpassword.js
     const handleAuthenAccountClick = async () => {
         try {
-            const data = { email };
+            const data = { email };  // Gửi email vào API
             const response = await forgotPassword(data);
+            console.log(response);  // Kiểm tra phản hồi từ API chi tiết
 
-            if (response.success) {
-                setMessage("Mã xác nhận đã được gửi đến email của bạn.");
-                // Điều hướng đến trang xác thực
-                navigate('/authen-account');
+            if (response && response.message === "Mã OTP đã được gửi đến email của bạn") {
+                if (response.otp) {
+                    localStorage.setItem('otp', response.otp);  // Lưu OTP vào localStorage
+                    localStorage.setItem('email', email);  // Lưu email vào localStorage
+                    setMessage(response.message);  // Hiển thị thông báo thành công
+                    navigate('/authen-account');  // Chuyển hướng người dùng đến trang nhập OTP
+                } else {
+                    setMessage("Không nhận được mã OTP từ máy chủ.");
+                }
             } else {
                 setMessage(response.message || "Có lỗi xảy ra, vui lòng thử lại.");
             }
         } catch (error) {
+            console.error("Error in handleAuthenAccountClick:", error);
             setMessage("Có lỗi xảy ra, vui lòng thử lại.");
         }
     };
@@ -127,7 +135,7 @@ function PorgotPassword() {
             <ContentRight>
                 <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} />
                 <Title>Quên Mật Khẩu</Title>
-                <Input 
+                <Input
                     placeholder="Nhập email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

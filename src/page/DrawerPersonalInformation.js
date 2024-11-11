@@ -40,6 +40,7 @@ const Drawer = styled.div`
 const DrawerTitle = styled.h2`
     font-size: 20px;
     margin-bottom: 20px;
+    color: #0288D1;
 `;
 
 const InputField = styled.input`
@@ -66,7 +67,7 @@ const ButtonWrapper = styled.div`
 `;
 
 const StyledButtonUpdate = styled.button`
-    background-color: ${(props) => (props.disabled ? '#888' : '#007bff')};
+    background-color: ${(props) => (props.disabled ? '#888' : '#0288D1')};
     width: 150px;
     color: white;
     border: none;
@@ -82,8 +83,8 @@ const StyledButtonUpdate = styled.button`
 const StyledButtonCancel = styled.button`
     background-color: #ffffff;
     width: 150px;
-    color: #007bff;
-    border-color: #007bff;
+    color: #0288D1;
+    border-color: #0288D1;
     border-radius: 30px;
     padding: 10px 10px;
     font-size: 14px;
