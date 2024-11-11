@@ -1,8 +1,9 @@
 import styled from "styled-components";
 import BannerLogin from '../images/banner-login.jpg';
 import LogoSky from '../images/logo-sky.png';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 const ContentLeft = styled.div`
   width: 45%;
@@ -39,7 +40,7 @@ const LogoSkyImg = styled.img`
 
 const Title = styled.h3`
     text-align: center;
-    color: #007aff;
+    color: #0288D1;
     font-size: 35px;
     font-weight: 620;
 `;
@@ -56,7 +57,7 @@ const Input = styled.input`
 `;
 
 const ButtonAuthen = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;
     color: #ffffff;
     font-size: 15px;
     margin: 20px auto;
@@ -74,7 +75,8 @@ const variants = {
 };
 
 function AuthenAccount() {
-
+    const [otp, setOtp] = useState('');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
     const handleReturnHome = () => {
@@ -82,7 +84,14 @@ function AuthenAccount() {
     };
 
     const handleResetPassword = () => {
-        navigate('/reset-password');
+        const storedOtp = localStorage.getItem('otp');  // Lấy OTP từ localStorage
+        console.log("Stored OTP:", storedOtp);  // Kiểm tra giá trị OTP từ localStorage
+
+        if (otp === storedOtp) {
+            navigate('/reset-password');  // Chuyển hướng đến trang reset mật khẩu
+        } else {
+            setMessage('Mã OTP không chính xác.');  // Hiển thị thông báo nếu OTP không khớp
+        }
     };
 
     return (
@@ -101,11 +110,15 @@ function AuthenAccount() {
             <ContentRight>
                 <LogoSkyImg src={LogoSky} alt="Logo Sky" onClick={handleReturnHome} />
                 <Title>Xác thực tài khoản</Title>
-                <Input placeholder="Nhập mã xác thực"></Input>
+                <Input
+                    placeholder="Nhập mã xác thực"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}  // Cập nhật state khi người dùng nhập OTP
+                />
                 <ButtonAuthen onClick={handleResetPassword}>Xác nhận</ButtonAuthen>
+                {message && <p style={{ color: 'red', textAlign: 'center' }}>{message}</p>}
             </ContentRight>
         </>
-
     );
 }
 

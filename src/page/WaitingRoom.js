@@ -70,7 +70,7 @@ const Logo = styled.img`
 `;
 
 const StyledLink = styled(Link)`
-    color: #1c0e72;
+    color: #0288D1;
     text-decoration: none;
     font-size: 15px;
     font-weight: bold;
@@ -92,7 +92,7 @@ const ButtonAvata = styled.button`
 
 const UserNameLink = styled(Link)`
     text-decoration: none;
-    color: #1c0e72;
+    color: #0288D1;
     font-size: 18px;
 `;
 
@@ -100,7 +100,7 @@ const StyledBackLink = styled.span`
     position: absolute;
     top: 80px;
     left: 20px;
-    color: #000000;
+    color: #222222;
     cursor: pointer;
     text-decoration: none;
     font-size: 18px;
@@ -137,7 +137,7 @@ const StyledVideo = styled.video`
 `;
 
 const ControlButton = styled.button`
-    background-color: ${({ isOn }) => (isOn ? "#007aff" : "#ff4d4f")}; /* Màu xanh khi bật, màu đỏ khi tắt */
+    background-color: ${({ isOn }) => (isOn ? "#0288D1" : "#ff4d4f")}; /* Màu xanh khi bật, màu đỏ khi tắt */
     color: #ffffff;
     border: none;
     height: 60px;
@@ -171,13 +171,13 @@ const ContentRow = styled.div`
 const TitleRequestJoin = styled.p`
     z-index: 2;
     text-align: center;
-    color: #000000;
+    color: #222222;
     font-size: 22px;
     font-weight: 700;
 `;
 
 const ButtonRequestJoin = styled.button`
-    background-color: #007aff;
+    background-color: #0288D1;
     color: #ffffff;
     border: none;
     height: 40px;

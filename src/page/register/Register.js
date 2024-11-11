@@ -42,7 +42,7 @@ const LogoSkyImg = styled.img`
 
 const Title = styled.p`
   text-align: center;
-  color: #007aff;
+  color: #0288D1;
   font-size: 35px;
   font-weight: 620;
 `;
@@ -59,7 +59,7 @@ const Input = styled.input`
 `;
 
 const ButtonLogin = styled.button`
-  background-color: #007aff;
+  background-color: #0288D1;
   color: #ffffff;
   font-size: 15px;
   margin: 20px auto;
