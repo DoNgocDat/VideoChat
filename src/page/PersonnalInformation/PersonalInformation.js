@@ -3,9 +3,11 @@ import logoSky from '../../images/logo-sky.png';
 import Avata from '../../images/avata.jpg';
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import DrawerPersonalInformation from '../DrawerPersonalInformation';
-import DrawerChangePassword from '../DrawerChangePassword';
+import DrawerPersonalInformation from '../DrawerPersonalInformation/DrawerPersonalInformation';
+import DrawerChangePassword from '../DrawerChangePassword/DrawerChangePassword';
 import { getUserInfo } from './services';
+import dayjs from 'dayjs';
+import { FaBars, FaSignOutAlt, FaClipboardList } from 'react-icons/fa';
 
 // Header (phần điều hướng trên cùng)
 const RouteLink = styled.nav`
@@ -133,6 +135,54 @@ const StyledButton = styled.button`
     }
 `;
 
+const MenuWrapper = styled.div`
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: ${(props) => (props.isOpen ? 'block' : 'none')};
+    z-index: 1001;
+`;
+
+const MenuItem = styled.div`
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #0288D1;
+    cursor: pointer;
+    &:hover {
+        background-color: #f1f1f1;
+    }
+`;
+
+const HeaderRight = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-right: 20px;
+`;
+
+const MenuIcon = styled.button`
+    background: none;
+    border: none;
+    font-size: 30px;
+    color: #0288D1;
+    cursor: pointer;
+`;
+
+const DropdownMenu = styled.div`
+    position: absolute;
+    top: 60px;
+    right: 30px; /* Add 30px space from the right edge */
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 200px;
+    display: ${(props) => (props.isOpen ? "block" : "none")};
+`;
+
 // Main component
 function PersonalInformation() {
     const [isEditing, setIsEditing] = useState(false);
@@ -141,6 +191,8 @@ function PersonalInformation() {
     const [userId, setUserId] = useState(null);
     const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
     const navigate = useNavigate();
+    const accessToken = localStorage.getItem('access_token');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleReturnHome = () => {
         navigate('/');
@@ -159,30 +211,28 @@ function PersonalInformation() {
         }
     }, [navigate]);
 
-    // Lấy thông tin người dùng khi userId thay đổi
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
-                const data = await getUserInfo(userId);
+                const data = await getUserInfo();
                 setUserInfo({
                     loginName: data.loginName,
                     name: data.fullName,
-                    birthDate: "N/A", // Cập nhật nếu có dữ liệu
-                    gender: "N/A", // Cập nhật nếu có dữ liệu
-                    address: "N/A", // Cập nhật nếu có dữ liệu
-                    phone: data.phoneNumber || "N/A",
-                    password: data.password,
+                    birthDate: data.NgaySinh ? dayjs(data.NgaySinh).format("DD/MM/YYYY") : "N/A",
+                    gender: data.GioiTinh || "N/A",
+                    address: data.DiaChi || "N/A",
+                    phone: data.SoDienThoai || "N/A",
                     email: data.email,
                 });
             } catch (error) {
-                console.error('Không thể lấy thông tin người dùng:', error);
+                console.error('Could not fetch user information:', error);
+                navigate('/login'); // Optional: Redirect to login if token is invalid or missing
             }
         };
 
-        if (userId) {
-            fetchUserInfo();
-        }
-    }, [userId]);
+        fetchUserInfo();
+    }, [navigate]);
+
 
     const toggleEditing = () => {
         if (isEditing) {
@@ -215,6 +265,19 @@ function PersonalInformation() {
         setIsEditing(false);
     };
 
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('access_token');
+        navigate('/login');
+    };
+
+    const handleAttendance = () => {
+        navigate('/attendance'); // Assuming there's a page for attendance
+    };
+
     return (
         <>
             <RouteLink>
@@ -222,6 +285,19 @@ function PersonalInformation() {
                     <Logo src={logoSky} alt="Logo Sky" onClick={handleReturnHome} />
                     <StyledLink to="/">SKY VIDEO CHAT</StyledLink>
                 </HeaderLeft>
+                <HeaderRight>
+                    <MenuIcon onClick={toggleMenu}>
+                        <FaBars />
+                    </MenuIcon>
+                    <DropdownMenu isOpen={isMenuOpen}>
+                        <MenuItem onClick={handleAttendance}>
+                            <FaClipboardList /> Điểm danh
+                        </MenuItem>
+                        <MenuItem onClick={handleLogout}>
+                            <FaSignOutAlt /> Đăng xuất
+                        </MenuItem>
+                    </DropdownMenu>
+                </HeaderRight>
             </RouteLink>
 
             <Overlay isEditing={isEditing || isPasswordChanging} onClick={() => {
@@ -260,156 +336,10 @@ function PersonalInformation() {
                 </ButtonWrapper>
             </ContentWrapper>
 
-            {isEditing && <DrawerPersonalInformation onClose={toggleEditing} isExiting={isExiting} userInfo={userInfo} onUpdateInfo={handleUpdateInfo} />}
-            {isPasswordChanging && <DrawerChangePassword onClose={togglePasswordChange} isExiting={isExiting} />}
+            {isEditing && <DrawerPersonalInformation onClose={toggleEditing} isExiting={isExiting} userInfo={userInfo} onUpdateInfo={handleUpdateInfo} accessToken={accessToken} />}
+            {isPasswordChanging && <DrawerChangePassword onClose={togglePasswordChange} isExiting={isExiting} accessToken={accessToken} />}
         </>
     );
 }
 
 export default PersonalInformation;
-
-// import { Link, useNavigate } from "react-router-dom";
-// import { useState, useEffect } from "react";
-// import logoSky from '../../images/logo-sky.png';
-// import Avata from '../../images/avata.jpg';
-// import DrawerPersonalInformation from '../DrawerPersonalInformation';
-// import DrawerChangePassword from '../DrawerChangePassword';
-// import { getUserInfo } from './services';
-
-// // Main component
-// function PersonalInformation() {
-//     const [isEditing, setIsEditing] = useState(false);
-//     const [isPasswordChanging, setIsPasswordChanging] = useState(false);
-//     const [isExiting, setIsExiting] = useState(false);
-//     const [userId, setUserId] = useState(null);
-//     const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
-//     const navigate = useNavigate();
-
-//     const handleReturnHome = () => {
-//         navigate('/');
-//     };
-
-//     // Lấy userId từ localStorage
-//     useEffect(() => {
-//         const storedUserId = localStorage.getItem('userId');
-//         if (storedUserId) {
-//             setUserId(storedUserId);
-//             console.log('Lấy ID người dùng thành công:', storedUserId); // Thông báo thành công
-//         } else {
-//             console.error('Không tìm thấy userId trong localStorage');
-//             // Có thể điều hướng về trang login nếu không có userId
-//             navigate('/login');
-//         }
-//     }, [navigate]);
-
-//     // Lấy thông tin người dùng khi userId thay đổi
-//     useEffect(() => {
-//         const fetchUserInfo = async () => {
-//             try {
-//                 const data = await getUserInfo(userId);
-//                 setUserInfo({
-//                     loginName: data.loginName,
-//                     name: data.fullName,
-//                     birthDate: "N/A", // Cập nhật nếu có dữ liệu
-//                     gender: "N/A", // Cập nhật nếu có dữ liệu
-//                     address: "N/A", // Cập nhật nếu có dữ liệu
-//                     phone: data.phoneNumber || "N/A",
-//                     password: data.password,
-//                     email: data.email,
-//                 });
-//             } catch (error) {
-//                 console.error('Không thể lấy thông tin người dùng:', error);
-//             }
-//         };
-
-//         if (userId) {
-//             fetchUserInfo();
-//         }
-//     }, [userId]);
-
-//     const toggleEditing = () => {
-//         if (isEditing) {
-//             setIsExiting(true);
-//             setTimeout(() => {
-//                 setIsEditing(false);
-//                 setIsExiting(false);
-//             }, 300);
-//         } else {
-//             setIsEditing(true);
-//             setIsExiting(false);
-//         }
-//     };
-
-//     const togglePasswordChange = () => {
-//         if (isPasswordChanging) {
-//             setIsExiting(true);
-//             setTimeout(() => {
-//                 setIsPasswordChanging(false);
-//                 setIsExiting(false);
-//             }, 300);
-//         } else {
-//             setIsPasswordChanging(true);
-//             setIsExiting(false);
-//         }
-//     };
-
-//     const handleUpdateInfo = (updatedInfo) => {
-//         setUserInfo(updatedInfo);
-//         setIsEditing(false);
-//     };
-
-//     return (
-//         <>
-//             <nav className="bg-white p-2 fixed top-0 left-0 w-full z-10 h-16 shadow-md flex justify-between items-center">
-//                 <div className="flex flex-col items-center pl-5">
-//                     <img src={logoSky} alt="Logo Sky" className="w-24 h-auto cursor-pointer" onClick={handleReturnHome} />
-//                     <Link to="/" className="text-[#0288D1] text-sm font-bold mt-1">SKY VIDEO CHAT</Link>
-//                 </div>
-//             </nav>
-
-//             <div className={`fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 z-10 ${isEditing || isPasswordChanging ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300`} 
-//                 onClick={() => {
-//                     if (isEditing) toggleEditing();
-//                     if (isPasswordChanging) togglePasswordChange();
-//                 }} />
-            
-//             <div className={`mt-20 p-5 ${isEditing || isPasswordChanging ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
-//                 <div className="text-center mb-5">
-//                     <button className="bg-cover bg-center w-16 h-16 rounded-full mb-2" style={{ backgroundImage: `url(${Avata})` }} />
-//                     <Link to="/" className="text-[#0288D1] text-lg font-bold">{userInfo ? userInfo.name : 'Loading...'}</Link>
-//                 </div>
-
-//                 <div className="flex justify-between w-11/12 mx-auto mt-5">
-//                     <div className="bg-[#f9f9f9] rounded-lg p-4 w-2/5 shadow-lg text-left">
-//                         <h3 className="text-[#0288D1] text-xl mb-4">Thông tin cá nhân</h3>
-//                         <p className="text-[#555] text-base mb-2">Họ và tên: {userInfo ? userInfo.name : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Ngày sinh: {userInfo ? userInfo.birthDate : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Giới tính: {userInfo ? userInfo.gender : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Địa chỉ: {userInfo ? userInfo.address : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Số điện thoại: {userInfo ? userInfo.phone : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Email: {userInfo ? userInfo.email : 'Loading...'}</p>
-//                     </div>
-//                     <div className="bg-[#f9f9f9] rounded-lg p-4 w-2/5 shadow-lg text-left">
-//                         <h3 className="text-[#0288D1] text-xl mb-4">Thông tin tài khoản</h3>
-//                         <p className="text-[#555] text-base mb-2">Tên đăng nhập: {userInfo ? userInfo.loginName : 'Loading...'}</p>
-//                         <p className="text-[#555] text-base mb-2">Mật khẩu: {userInfo ? '********' : 'Loading...'}</p>
-//                     </div>
-//                 </div>
-
-//                 <div className="flex justify-around mt-5">
-//                     <button 
-//                         className="bg-[#0288D1] text-white rounded-3xl py-2 px-4 text-sm cursor-pointer hover:bg-[#0056b3]"
-//                         onClick={toggleEditing}>Chỉnh sửa</button>
-//                     <button 
-//                         className="bg-[#0288D1] text-white rounded-3xl py-2 px-4 text-sm cursor-pointer hover:bg-[#0056b3]"
-//                         onClick={togglePasswordChange}>Đổi mật khẩu</button>
-//                 </div>
-//             </div>
-
-//             {isEditing && <DrawerPersonalInformation onClose={toggleEditing} isExiting={isExiting} userInfo={userInfo} onUpdateInfo={handleUpdateInfo} />}
-//             {isPasswordChanging && <DrawerChangePassword onClose={togglePasswordChange} isExiting={isExiting} />}
-//         </>
-//     );
-// }
-
-// export default PersonalInformation;

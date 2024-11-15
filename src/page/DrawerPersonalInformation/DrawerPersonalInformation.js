@@ -1,6 +1,7 @@
 // DrawerPersonalInformation.js
 import React, { useState } from "react";
 import styled from "styled-components";
+import { updateUserProfile } from "./services";
 
 const Drawer = styled.div`
     position: fixed;
@@ -44,12 +45,12 @@ const DrawerTitle = styled.h2`
 `;
 
 const InputField = styled.input`
-    width: calc(100% - 30px); /* Giảm chiều rộng để tạo khoảng cách từ lề */
+    width: calc(100% - 30px);
     padding: 10px;
     margin-bottom: 15px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    margin-left: 10px; /* Thêm khoảng cách từ lề trái */
+    margin-left: 10px;
 `;
 
 
@@ -94,7 +95,7 @@ const StyledButtonCancel = styled.button`
     }
 `;
 
-function DrawerPersonalInformation({ onClose, isExiting, userInfo, onUpdateInfo }) {
+function DrawerPersonalInformation({ onClose, isExiting, userInfo, onUpdateInfo, accessToken }) {
     const [name, setName] = useState(userInfo.name);
     const [birthDate, setBirthDate] = useState(userInfo.birthDate);
     const [gender, setGender] = useState(userInfo.gender);
@@ -113,9 +114,18 @@ function DrawerPersonalInformation({ onClose, isExiting, userInfo, onUpdateInfo 
         setEmail(newEmail);
         setEmailError(!validateEmail(newEmail));
     };
-    const handleUpdate = () => {
-        onUpdateInfo({ name, birthDate, gender, address, phone, email });
-        onClose();
+
+    const handleUpdate = async () => {
+        console.log(accessToken)
+        try {
+            // Gọi API để cập nhật thông tin người dùng
+            await updateUserProfile({ name, birthDate, gender, address, phone, email }, accessToken);
+            onUpdateInfo({ name, birthDate, gender, address, phone, email }); // Truyền dữ liệu đã cập nhật lên component cha
+            onClose(); // Đóng drawer
+        } catch (error) {
+            console.error('Cập nhật hồ sơ không thành công:', error);
+            alert("Cập nhật thất bại, vui lòng thử lại.");
+        }
     };
 
     return (

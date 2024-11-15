@@ -9,6 +9,7 @@ import RegisterPage from './page/register/Register';
 import PersonalInformation from './page/PersonnalInformation/PersonalInformation'
 import WaitingRoom from "./page/WaitingRoom";
 import ClassRoom from "./page/ClassRoom";
+import Attendance from "./page/Attendance/Attendance";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/personal-information" element={<PersonalInformation/>}/>
         <Route path="/waiting-room" element={<WaitingRoom/>} />
         <Route path="/classroom/1234567" element={<ClassRoom/>}/>
+        <Route path="/attendance" element={<Attendance/>} />
       </Routes>
     </BrowserRouter>
   );
