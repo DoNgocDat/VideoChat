@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, faHandPaper, faSignOutAlt, 
-         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop } from '@fortawesome/free-solid-svg-icons';
+         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop, faPaperclip, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import useWebRTC from '../page/useWebRTC';
 import socket from 'socket.io-client'
@@ -269,6 +269,73 @@ const Switch = styled.div`
   }
 `;
 
+const ChatDisplay = styled.div`
+  height: 83%;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+`;
+
+const Message = styled.div`
+  margin-bottom: 5px;
+  padding: 5px;
+  background-color: #edf2f4;
+  border-radius: 5px;
+  color: #2b2d42;
+`;
+
+const ChatInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+  box-sizing: border-box; /* Đảm bảo padding không làm tràn */
+  width: 100%; /* Đảm bảo nó không tràn khung */
+  gap: 8px; /* Khoảng cách giữa các thành phần */
+`;
+
+const FileUploadIcon = styled.div`
+  flex: 0 0 auto; /* Giữ kích thước cố định */
+  cursor: pointer;
+  font-size: 18px;
+  color: #2b2d42;
+
+  &:hover {
+    color: #1b1d32;
+  }
+`;
+
+const ChatInput = styled.input`
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%; /* Đảm bảo không bị tràn */
+`;
+
+const FileUploadInput = styled.input`
+  display: none;
+`;
+
+const SendButton = styled.button`
+  flex: 0 0 auto; /* Giữ kích thước cố định */
+  padding: 8px 12px;
+  background-color: #2b2d42;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 8px;
+
+  &:hover {
+    background-color: #1b1d32;
+  }
+`;
+
+
 
 function ClassRoom() {
   const { classCode } = useParams(); // Lấy mã lớp từ URL
@@ -458,6 +525,27 @@ function ClassRoom() {
     }
   };
 
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      setMessages([...messages, { sender: "You", text: newMessage }]);
+      setNewMessage("");
+    }
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMessages([...messages, { sender: "You", text: `Đã gửi file: ${file.name}` }]);
+    }
+  };
+
+
+
   const toggleAllowMic = () => setAllowMic(!allowMic);
   const toggleAllowChat = () => setAllowChat(!allowChat);
 
@@ -571,6 +659,36 @@ function ClassRoom() {
         <FloatingPanel>
           <HeaderPanel>Chat</HeaderPanel>
           
+          {/* Khu vực hiển thị tin nhắn */}
+          <ChatDisplay>
+            {/* Render các tin nhắn tại đây */}
+            {messages.map((msg, index) => (
+              <Message key={index}>
+                <strong>{msg.sender}: </strong>{msg.text}
+              </Message>
+            ))}
+          </ChatDisplay>
+
+          {/* Ô nhập tin nhắn và chức năng gửi tin nhắn */}
+          <ChatInputContainer>
+            <FileUploadIcon onClick={() => fileInputRef.current.click()}>
+              <FontAwesomeIcon icon={faPaperclip} />
+            </FileUploadIcon>
+            <ChatInput
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Nhập tin nhắn..."
+            />
+            <SendButton onClick={handleSendMessage}>
+              <FontAwesomeIcon icon={faPaperPlane} />
+            </SendButton>
+            <FileUploadInput
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+            />
+          </ChatInputContainer>
         </FloatingPanel>
       )}
 
