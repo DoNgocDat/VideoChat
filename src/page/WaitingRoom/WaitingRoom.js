@@ -1,17 +1,20 @@
 import styled from "styled-components";
-import Background from '../images/Background.jpg';
-import logoSky from '../images/logo-sky.png';
-import Avata from '../images/avata.jpg';
+import Background from '../../images/Background.jpg';
+import logoSky from '../../images/logo-sky.png';
+import Avata from '../../images/avata.jpg';
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from "@fortawesome/free-solid-svg-icons"; // Import các icon cần thiết
 
 import React, { useRef , useEffect} from "react";
-import useWebRTC from '../page/useWebRTC';
+import useWebRTC from '../useWebRTC';
 // import { Socket } from "socket.io-client";
+
+import { getUserInfo, requestJoinClass } from './services';
+
 
 const BackgroundImg = styled.div`
     position: relative;
@@ -199,12 +202,50 @@ const variants = {
 
 function WaitingRoom() {
     const navigate = useNavigate();
-    const { localStream, startCall, requestJoin } = useWebRTC();
+    const { classCode } = useParams(); // Lấy mã lớp từ URL
+    const [userId, setUserId] = useState(null);
+    const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
+    const { localStream } = useWebRTC();
     const localVideoRef = useRef(null);
     // const [classCode, setClassCode] = useState('');
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
     const [isApproved, setIsApproved] = useState(false);  // Trạng thái chờ phê duyệt
+
+      // Lấy userId từ localStorage
+    useEffect(() => {
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId) {
+        setUserId(storedUserId);
+        console.log('Lấy ID người dùng thành công:', storedUserId); // Thông báo thành công
+      } else {
+        console.error('Không tìm thấy userId trong localStorage');
+        // Có thể điều hướng về trang login nếu không có userId
+        navigate('/login');
+      }
+    }, [navigate]);
+
+    // Lấy thông tin người dùng khi userId thay đổi
+    useEffect(() => {
+      const fetchUserInfo = async () => {
+        try {
+          const data = await getUserInfo(userId);
+          setUserInfo({
+            name: data.fullName,
+          });
+        } catch (error) {
+          console.error('Không thể lấy thông tin người dùng:', error);
+        }
+      };
+
+      if (userId) {
+        fetchUserInfo();
+      }
+    }, [userId]);
+
+    const handlePersonalInformationClick = () => {
+      navigate('/personal-information');
+    };
 
     useEffect(() => {
       if (localStream) {
@@ -248,10 +289,38 @@ function WaitingRoom() {
       }
     };
 
-    // Hàm yêu cầu tham gia lớp học
-    const handleStartCall = () => {
-      requestJoin();
-    };
+
+  // Gửi yêu cầu tham gia lớp học
+  const handleRequestJoin = async () => {
+    try {
+      const userId = parseInt(localStorage.getItem('userId'), 10);
+      const fullName = localStorage.getItem('full_name');
+
+      // console.log({userId, fullName, classCode});
+  
+      if (!userId || isNaN(userId)) {
+        throw new Error('userId không hợp lệ');
+      }
+      if (!fullName || !classCode) {
+        throw new Error('Thiếu thông tin tham gia lớp học');
+      }
+
+      const data = {
+        userId: userId,
+        fullName: fullName,
+        classCode: classCode,
+      }
+
+      console.log(data);
+  
+      const response = await requestJoinClass(data);
+      console.log(response.message);
+    } catch (error) {
+      console.error('Lỗi khi gửi yêu cầu tham gia lớp học:', error);
+    }
+  };
+  
+    
 
     // Điều kiện điều hướng vào phòng học chỉ khi yêu cầu được phê duyệt
     useEffect(() => {
@@ -269,10 +338,6 @@ function WaitingRoom() {
       navigate('/create-class');
     };
 
-    const handlePersonalInformation = () =>{
-      navigate('/personal-information');
-    };
-
     const handleReturnHome = () => {
       navigate('/');
     };
@@ -286,8 +351,8 @@ function WaitingRoom() {
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata onClick={handlePersonalInformation}/>
-          <UserNameLink to="/personal-information">Đỗ Ngọc Đạt</UserNameLink>
+          <ButtonAvata onClick={handlePersonalInformationClick} />
+          <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
         </HeaderRight>
       </RouteLink>
 
@@ -323,7 +388,7 @@ function WaitingRoom() {
 
             <ContentRow>
               <TitleRequestJoin>Sẵn sàng tham gia lớp học?</TitleRequestJoin>
-              <ButtonRequestJoin onClick={handleStartCall}>Yêu cầu tham gia</ButtonRequestJoin>
+              <ButtonRequestJoin onClick={handleRequestJoin}>Yêu cầu tham gia</ButtonRequestJoin>
             </ContentRow>
           </MainContent>
       </BackgroundImg>

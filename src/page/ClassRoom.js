@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, faHandPaper, faSignOutAlt, 
@@ -215,6 +215,50 @@ const RequestItem = styled.li`
   margin: 5px 0;
 `;
 
+/* Danh sách học viên */
+const ParticipantList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: calc(100vh - 250px); /* Giới hạn chiều cao, tự điều chỉnh theo màn hình */
+  overflow-y: auto;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+
+  /* Tự động giảm chiều cao khi danh sách yêu cầu tham gia xuất hiện */
+  transition: max-height 0.3s ease;
+`;
+
+/* Học viên */
+const ParticipantItem = styled.li`
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  strong {
+    color: #000000;
+    font-weight: bold;
+  }
+
+  span {
+    font-size: 1rem;
+    color: #000000;
+  }
+`;
+
+/* Khi không có học viên */
+const EmptyMessage = styled.p`
+  text-align: center;
+  font-size: 1rem;
+  color: #888;
+  margin: 20px 0;
+`;
+
 const Button = styled.button`
   margin-left: 5px;
   padding: 3px 6px;
@@ -422,6 +466,9 @@ function ClassRoom() {
     setJoinRequests(prevRequests => prevRequests.filter(request => request.userId !== userId));
   };
   
+  const location = useLocation();
+  const { participants } = location.state || {}; // Nhận dữ liệu hoặc mặc định là {}
+
 
   // Hàm bật/tắt camera
   const toggleCamera = () => {
@@ -636,6 +683,7 @@ function ClassRoom() {
             </FindButton>
 
           </FindContainer>
+
           {/* Hiển thị yêu cầu tham gia nếu có */}
           {joinRequests.length > 0 && (
             <JoinRequestsContainer>
@@ -651,6 +699,23 @@ function ClassRoom() {
               </RequestList>
             </JoinRequestsContainer>
           )}
+
+          <ParticipantList>
+            {participants.length > 0 ? (
+              participants.map((participant, index) => (
+                <ParticipantItem key={participant.id}>
+                  {index === 0 ? (
+                    <strong>{participant.fullName} (Chủ phòng)</strong>
+                  ) : (
+                    <span>{participant.fullName}</span>
+                  )}
+                </ParticipantItem>
+              ))
+            ) : (
+              <EmptyMessage>Chưa có học viên nào trong lớp</EmptyMessage>
+            )}
+          </ParticipantList>
+
         </FloatingPanel>
       )}
 

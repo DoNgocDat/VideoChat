@@ -7,7 +7,7 @@ import ResetPassword from './page/ResetPassword/ResetPassword';
 import CreateClass from './page/CreateClass/CreateClass';
 import RegisterPage from './page/register/Register';
 import PersonalInformation from './page/PersonnalInformation/PersonalInformation'
-import WaitingRoom from "./page/WaitingRoom";
+import WaitingRoom from "./page/WaitingRoom/WaitingRoom";
 import ClassRoom from "./page/ClassRoom";
 import Attendance from "./page/Attendance/Attendance";
 
@@ -23,8 +23,8 @@ function App() {
         <Route path="/create-class" element={<CreateClass/>}/>
         <Route path="/register" element={<RegisterPage/>}/>
         <Route path="/personal-information" element={<PersonalInformation/>}/>
-        <Route path="/waiting-room" element={<WaitingRoom/>} />
-        <Route path="/classroom/1234567" element={<ClassRoom/>}/>
+        <Route path="/waiting-room/:classCode" element={<WaitingRoom/>} />
+        <Route path="/classroom/:classCode" element={<ClassRoom/>}/>
         <Route path="/attendance" element={<Attendance/>} />
       </Routes>
     </BrowserRouter>

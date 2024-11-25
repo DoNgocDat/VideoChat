@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
-import { getUserInfo } from './services';
+import { getUserInfo, createLopHoc, checkClass } from './services';
 
 const BackgroundImg = styled.div`
     position: relative;
@@ -185,10 +185,6 @@ const ModalButton = styled.button`
     cursor: pointer;
 `;
 
-// const generateClassCode = () => {
-//   return Math.floor(1000000 + Math.random() * 9000000).toString();
-// };
-
 function CreateClass() {
   const [userId, setUserId] = useState(null);
   const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
@@ -231,25 +227,57 @@ function CreateClass() {
     navigate('/personal-information');
   };
 
-  const handleJoinClass = () => {
+  const handleJoinClass = async () => {
+    try {
+      // Kiểm tra mã lớp qua API
+      const classExists = await checkClass(classCode); // Gọi API kiểm tra mã lớp
+  
+      if (classExists) {
+        // Nếu tồn tại, điều hướng đến phòng chờ
+        navigate(`/waiting-room/${classCode}`);
+      } else {
+        // Nếu không tồn tại, hiển thị thông báo lỗi
+        setShowModal(true); // Hiển thị modal thông báo
+      }
+    } catch (error) {
+      console.error('Lỗi khi kiểm tra mã lớp:', error);
+      alert('Đã xảy ra lỗi khi kiểm tra mã lớp. Vui lòng thử lại.');
+    }
+  };
 
-    if (classCode !== '1234567') {
-      setShowModal(true);
+    const closeModal = () => {
+      setShowModal(false); // Đóng modal
+  };
+
+  const [participants, setParticipants] = useState([]);
+
+  const handleCreateClass = async () => {
+    if (!userId) {
+      console.error('Không tìm thấy user id');
       return;
     }
-    navigate('/waiting-room');
+
+    try {
+        // Gửi yêu cầu tạo lớp học với userId
+        const createdClass = await createLopHoc(userId);
+        
+        console.log('Lớp học được tạo thành công:', createdClass);
+
+        const creator = {
+          id: createdClass.user.id,
+          fullName: createdClass.user.fullName,
+          role: createdClass.user.role
+        }
+
+        setParticipants([creator])
+
+        navigate(`/classroom/${createdClass.MaLop}`, {state: {participants: [creator]}});
+    } catch (error) {
+        console.error('Lỗi khi tạo lớp học:', error);
+        alert('Không thể tạo lớp học. Vui lòng thử lại.');
+    }
   };
 
-  const closeModal = () => {
-    setShowModal(false); // Đóng modal
-};
-
-  const handleCreateClass = () => {
-    // const classCode = generateClassCode();
-    // navigate(`/classroom/${classCode}`);
-    navigate(`/classroom/1234567`);
-
-  };
 
   const handleReturnHome = () => {
     navigate('/');
