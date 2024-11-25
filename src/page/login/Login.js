@@ -153,6 +153,7 @@ function Login() {
                 if (userId) {
                     console.log('Lấy ID người dùng thành công:', userId); // Thông báo thành công
                     localStorage.setItem('userId', userId); // Lưu ID vào localStorage
+                    localStorage.setItem('full_name', response.full_name);
                     localStorage.setItem('access_token', response.access_token); // Lưu token nếu cần
                     navigate('/create-class');
                 } else {

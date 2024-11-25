@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, faHandPaper, faSignOutAlt, 
-         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop } from '@fortawesome/free-solid-svg-icons';
+         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop, faPaperclip, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 import useWebRTC from '../page/useWebRTC';
 import socket from 'socket.io-client'
@@ -215,6 +215,50 @@ const RequestItem = styled.li`
   margin: 5px 0;
 `;
 
+/* Danh sách học viên */
+const ParticipantList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: calc(100vh - 250px); /* Giới hạn chiều cao, tự điều chỉnh theo màn hình */
+  overflow-y: auto;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+
+  /* Tự động giảm chiều cao khi danh sách yêu cầu tham gia xuất hiện */
+  transition: max-height 0.3s ease;
+`;
+
+/* Học viên */
+const ParticipantItem = styled.li`
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  strong {
+    color: #000000;
+    font-weight: bold;
+  }
+
+  span {
+    font-size: 1rem;
+    color: #000000;
+  }
+`;
+
+/* Khi không có học viên */
+const EmptyMessage = styled.p`
+  text-align: center;
+  font-size: 1rem;
+  color: #888;
+  margin: 20px 0;
+`;
+
 const Button = styled.button`
   margin-left: 5px;
   padding: 3px 6px;
@@ -268,6 +312,73 @@ const Switch = styled.div`
     transition: left 0.3s;
   }
 `;
+
+const ChatDisplay = styled.div`
+  height: 83%;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+`;
+
+const Message = styled.div`
+  margin-bottom: 5px;
+  padding: 5px;
+  background-color: #edf2f4;
+  border-radius: 5px;
+  color: #2b2d42;
+`;
+
+const ChatInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+  box-sizing: border-box; /* Đảm bảo padding không làm tràn */
+  width: 100%; /* Đảm bảo nó không tràn khung */
+  gap: 8px; /* Khoảng cách giữa các thành phần */
+`;
+
+const FileUploadIcon = styled.div`
+  flex: 0 0 auto; /* Giữ kích thước cố định */
+  cursor: pointer;
+  font-size: 18px;
+  color: #2b2d42;
+
+  &:hover {
+    color: #1b1d32;
+  }
+`;
+
+const ChatInput = styled.input`
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%; /* Đảm bảo không bị tràn */
+`;
+
+const FileUploadInput = styled.input`
+  display: none;
+`;
+
+const SendButton = styled.button`
+  flex: 0 0 auto; /* Giữ kích thước cố định */
+  padding: 8px 12px;
+  background-color: #2b2d42;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 8px;
+
+  &:hover {
+    background-color: #1b1d32;
+  }
+`;
+
 
 
 function ClassRoom() {
@@ -355,6 +466,9 @@ function ClassRoom() {
     setJoinRequests(prevRequests => prevRequests.filter(request => request.userId !== userId));
   };
   
+  const location = useLocation();
+  const { participants } = location.state || {}; // Nhận dữ liệu hoặc mặc định là {}
+
 
   // Hàm bật/tắt camera
   const toggleCamera = () => {
@@ -458,6 +572,27 @@ function ClassRoom() {
     }
   };
 
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      setMessages([...messages, { sender: "You", text: newMessage }]);
+      setNewMessage("");
+    }
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMessages([...messages, { sender: "You", text: `Đã gửi file: ${file.name}` }]);
+    }
+  };
+
+
+
   const toggleAllowMic = () => setAllowMic(!allowMic);
   const toggleAllowChat = () => setAllowChat(!allowChat);
 
@@ -548,6 +683,7 @@ function ClassRoom() {
             </FindButton>
 
           </FindContainer>
+
           {/* Hiển thị yêu cầu tham gia nếu có */}
           {joinRequests.length > 0 && (
             <JoinRequestsContainer>
@@ -563,6 +699,23 @@ function ClassRoom() {
               </RequestList>
             </JoinRequestsContainer>
           )}
+
+          <ParticipantList>
+            {participants.length > 0 ? (
+              participants.map((participant, index) => (
+                <ParticipantItem key={participant.id}>
+                  {index === 0 ? (
+                    <strong>{participant.fullName} (Chủ phòng)</strong>
+                  ) : (
+                    <span>{participant.fullName}</span>
+                  )}
+                </ParticipantItem>
+              ))
+            ) : (
+              <EmptyMessage>Chưa có học viên nào trong lớp</EmptyMessage>
+            )}
+          </ParticipantList>
+
         </FloatingPanel>
       )}
 
@@ -571,6 +724,36 @@ function ClassRoom() {
         <FloatingPanel>
           <HeaderPanel>Chat</HeaderPanel>
           
+          {/* Khu vực hiển thị tin nhắn */}
+          <ChatDisplay>
+            {/* Render các tin nhắn tại đây */}
+            {messages.map((msg, index) => (
+              <Message key={index}>
+                <strong>{msg.sender}: </strong>{msg.text}
+              </Message>
+            ))}
+          </ChatDisplay>
+
+          {/* Ô nhập tin nhắn và chức năng gửi tin nhắn */}
+          <ChatInputContainer>
+            <FileUploadIcon onClick={() => fileInputRef.current.click()}>
+              <FontAwesomeIcon icon={faPaperclip} />
+            </FileUploadIcon>
+            <ChatInput
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Nhập tin nhắn..."
+            />
+            <SendButton onClick={handleSendMessage}>
+              <FontAwesomeIcon icon={faPaperPlane} />
+            </SendButton>
+            <FileUploadInput
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+            />
+          </ChatInputContainer>
         </FloatingPanel>
       )}
 
