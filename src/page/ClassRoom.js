@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, faHandPaper, faSignOutAlt, 
-         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop, faPaperclip, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+         faUsers, faComments, faClipboardList, faCrown, faSearch, faStop, faPaperclip, faPaperPlane, faDownload } from '@fortawesome/free-solid-svg-icons';
 
 import useWebRTC from '../page/useWebRTC';
 import socket from 'socket.io-client'
@@ -142,6 +142,37 @@ const ButtonControl = styled.button`
 
   &:focus {
     outline: none;
+  }
+`;
+
+const Notification = styled.div`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  animation: fade-in-out 2s ease-in-out;
+
+  @keyframes fade-in-out {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    10% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    90% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
   }
 `;
 
@@ -318,8 +349,11 @@ const ChatDisplay = styled.div`
   overflow-y: auto;
   margin-bottom: 10px;
   padding: 5px;
-  background-color: #f0f0f0;
+  // background-color: #f0f0f0;
   border-radius: 5px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
 `;
 
 const Message = styled.div`
@@ -328,6 +362,10 @@ const Message = styled.div`
   background-color: #edf2f4;
   border-radius: 5px;
   color: #2b2d42;
+  max-width: 70%;
+  word-wrap: break-word;
+  // background-color: ${(props) => (props.isUser ? "#cce5ff" : "#edf2f4")};
+  align-self: ${(props) => (props.isUser ? "flex-end" : "flex-start")};
 `;
 
 const ChatInputContainer = styled.div`
@@ -379,11 +417,27 @@ const SendButton = styled.button`
   }
 `;
 
+const SenderName = styled.div`
+  font-weight: bold;
+  margin-bottom: 3px;
+  color: #2b2d42;
+`;
+
+const DownloadIcon = styled.a`
+  margin-right: 8px;
+  color: #2b2d42;
+  text-decoration: none;
+
+  &:hover {
+    color: #1b1d32;
+  }
+`;
 
 
 function ClassRoom() {
-  const { classCode } = useParams(); // Lấy mã lớp từ URL
   const navigate = useNavigate();
+  const { classCode } = useParams(); // Lấy mã lớp từ URL
+  const username = localStorage.getItem('full_name');
   const { localStream, remoteStreams, startCall, getPeerConnection, isConnected, connectedSocketIds } = useWebRTC(classCode);
   const localVideoRef = useRef(null);
   const remoteVideoRefs = useRef([]);
@@ -574,11 +628,14 @@ function ClassRoom() {
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const chatDisplayRef = useRef(null);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      setMessages([...messages, { sender: "You", text: newMessage }]);
-      setNewMessage("");
+      setMessages([
+        { sender: "Bạn", text: newMessage, isFile: false },
+        ...messages,
+      ]);      setNewMessage("");
     }
   };
 
@@ -587,14 +644,38 @@ function ClassRoom() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setMessages([...messages, { sender: "You", text: `Đã gửi file: ${file.name}` }]);
+      const fileURL = URL.createObjectURL(file);
+      setMessages([
+        { sender: "Bạn", text: file.name, fileURL, isFile: true },
+        ...messages,
+      ]);
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSendMessage();
+    }
+  }
 
+  // Tự động cuộn xuống dưới khi có tin nhắn mới
+  useEffect(() => {
+    if (chatDisplayRef.current) {
+      chatDisplayRef.current.scrollTop = chatDisplayRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const toggleAllowMic = () => setAllowMic(!allowMic);
   const toggleAllowChat = () => setAllowChat(!allowChat);
+
+  const [notification, setNotification] = useState("");
+
+  const handleRaiseHand = (userName) => {
+    setNotification(`${userName} đang giơ tay phát biểu`);
+    setTimeout(() => {
+      setNotification(""); // Xóa thông báo sau 2 giây
+    }, 2000);
+  };
 
   // Hàm thoát phòng học
   const handleLeaveClass = () => {
@@ -647,9 +728,10 @@ function ClassRoom() {
           <ButtonControl onClick={toggleScreenShare} title='Bật/Tắt Chia sẻ màn hình'>
             <FontAwesomeIcon icon={isScreenSharing ? faStop : faChalkboard} />
           </ButtonControl>
-          <ButtonControl title='Giơ tay'>
+          <ButtonControl onClick={() => handleRaiseHand(username)} title='Giơ tay'>
             <FontAwesomeIcon icon={faHandPaper} />
           </ButtonControl>
+          {notification && <Notification>{notification}</Notification>}
           <ButtonControl onClick={handleLeaveClass} title='Rời khỏi lớp'>
             <FontAwesomeIcon icon={faSignOutAlt} />
           </ButtonControl>
@@ -725,13 +807,29 @@ function ClassRoom() {
           <HeaderPanel>Chat</HeaderPanel>
           
           {/* Khu vực hiển thị tin nhắn */}
-          <ChatDisplay>
+          <ChatDisplay ref={chatDisplayRef}>
             {/* Render các tin nhắn tại đây */}
-            {messages.map((msg, index) => (
-              <Message key={index}>
-                <strong>{msg.sender}: </strong>{msg.text}
-              </Message>
-            ))}
+            {messages.map((msg, index) => {
+              const showSender =
+                index === messages.length - 1 ||
+                messages[index + 1].sender !== msg.sender; // Hiển thị tên nếu tin nhắn khác người gửi trước đó
+
+              return (
+                <Message key={index} isUser={msg.sender === "Bạn"}>
+                  {showSender && <SenderName>{msg.sender}</SenderName>}
+                  {msg.isFile ? (
+                    <>
+                      <DownloadIcon href={msg.fileURL} download={msg.text}>
+                        <FontAwesomeIcon icon={faDownload} />  
+                        {msg.text}
+                      </DownloadIcon>
+                    </>
+                  ) : (
+                    msg.text
+                  )}
+                </Message>
+              );
+            })}
           </ChatDisplay>
 
           {/* Ô nhập tin nhắn và chức năng gửi tin nhắn */}
@@ -742,7 +840,9 @@ function ClassRoom() {
             <ChatInput
               type="text"
               value={newMessage}
+              maxLength={200}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Nhập tin nhắn..."
             />
             <SendButton onClick={handleSendMessage}>
