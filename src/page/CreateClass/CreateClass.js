@@ -249,7 +249,6 @@ function CreateClass() {
       setShowModal(false); // Đóng modal
   };
 
-  const [participants, setParticipants] = useState([]);
 
   const handleCreateClass = async () => {
     if (!userId) {
@@ -263,15 +262,7 @@ function CreateClass() {
         
         console.log('Lớp học được tạo thành công:', createdClass);
 
-        const creator = {
-          id: createdClass.user.id,
-          fullName: createdClass.user.fullName,
-          role: createdClass.user.role
-        }
-
-        setParticipants([creator])
-
-        navigate(`/classroom/${createdClass.MaLop}`, {state: {participants: [creator]}});
+        navigate(`/classroom/${createdClass.MaLop}`);
     } catch (error) {
         console.error('Lỗi khi tạo lớp học:', error);
         alert('Không thể tạo lớp học. Vui lòng thử lại.');
@@ -342,7 +333,7 @@ function CreateClass() {
                 transition={{ duration: 0.3 }}
               >
                 <h3>Tham gia thất bại</h3>
-                <p>Nhập mã 1234567 để vào lớp học.</p>
+                <p>Vui lòng nhập đúng mã lớp.</p>
                 <ModalButton onClick={closeModal}>Đóng</ModalButton>
               </ModalContent>
             </ModalBackground>
