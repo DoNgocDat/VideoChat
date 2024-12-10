@@ -21,7 +21,8 @@
     "styled-component": "^2.8.0",
     "styled-components": "^6.1.13",
     "vite": "^5.4.10",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",

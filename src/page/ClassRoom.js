@@ -8,7 +8,7 @@ import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, f
 // import useWebRTC from '../page/useWebRTC';
 // import io from 'socket.io-client'; // Import socket.io-client
 import { useSocketContext } from './socketContext';
-
+import * as XLSX from 'xlsx';
 
 const Container = styled.div`
   display: flex;
@@ -190,6 +190,7 @@ const FloatingPanel = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 15px;
   z-index: 1000;
+  overflow: hidden; /* Ẩn nội dung tràn */
 `;
 
 const HeaderPanel = styled.span`
@@ -434,6 +435,71 @@ const DownloadIcon = styled.a`
   &:hover {
     color: #1b1d32;
   }
+`;
+
+const Actions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  right: 15px;
+`;
+
+const ActionButton = styled.button`
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #4CAF40;
+  }
+`;
+
+const TableContainer = styled.div`
+  flex-grow: 1; /* Phần bảng chiếm hết khoảng trống */
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow: auto; /* Cuộn nội dung nếu vượt khung */
+  max-height: 400px; /* Giới hạn chiều cao khung */
+  max-height: calc(100% - 50px); /* Đảm bảo bảng không tràn qua phần nút */
+  color: #000000
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const TableHeader = styled.th`
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  position: sticky;
+  top: 0; /* Cố định tiêu đề bảng */
+`;
+
+const TableRow = styled.tr`
+  &:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  &:hover {
+    background-color: #f1f1f1;
+  }
+`;
+
+const TableData = styled.td`
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
 `;
 
 
@@ -1260,6 +1326,90 @@ function ClassRoom() {
     }, 2000);
   };
 
+  const currentUserId = localStorage.getItem('userId'); // Lấy userId của người dùng hiện tại
+
+  // Kiểm tra người dùng hiện tại có phải là chủ phòng
+  const isOwner = participants.length > 0 && participants[0].userId === currentUserId;
+
+  // Kiểm tra có yêu cầu tham gia hay không
+  const hasJoinRequests = joinRequests.length > 0;
+
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [fileData, setFileData] = useState(null);
+
+  // Hàm xử lý khi tải file Excel
+  const handleFileUpload1 = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      setFileData(jsonData); // Lưu dữ liệu file gốc
+      setAttendanceData(jsonData); // Dữ liệu sẽ được hiển thị
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Hàm xử lý điểm danh
+  const handleAttendance = (users) => {
+    // Kiểm tra xem danh sách người tham gia có hợp lệ không
+    if (!Array.isArray(users) || users.length === 0) {
+      console.error('Danh sách người tham gia không hợp lệ:', users);
+      return;
+    }
+  
+    console.log('Danh sách người tham gia từ socket:', users);
+  
+    // Lấy ngày hiện tại
+    const today = new Date().toISOString().split('T')[0];
+    const headers = fileData[0]; // Tiêu đề
+    let dateColumnIndex = headers.indexOf(today);
+  
+    // Nếu ngày hôm nay chưa tồn tại trong tiêu đề, thêm mới
+    if (dateColumnIndex === -1) {
+      dateColumnIndex = headers.length;
+      headers.push(today);
+  
+      // Thêm cột trống cho các dòng dữ liệu
+      fileData.forEach((row, index) => {
+        if (index !== 0) row.push('');
+      });
+    }
+  
+    // Cập nhật dữ liệu điểm danh
+    const updatedData = fileData.map((row, rowIndex) => {
+      if (rowIndex === 0) return row; // Dòng tiêu đề
+  
+      const [_, fullName, userName] = row;
+  
+      // Kiểm tra xem học viên này có trong danh sách `users` từ socket không
+      const isPresent = users.some(
+        (user) => user.fullName === fullName && user.userName === userName
+      );
+  
+      // Đánh dấu 'T' nếu có mặt, ngược lại là 'F'
+      row[dateColumnIndex] = isPresent ? 'T' : 'F';
+      return row;
+    });
+  
+    console.log('Updated Attendance Data:', updatedData);
+    setAttendanceData([...updatedData]); // Cập nhật state
+  };
+  
+  const handleExportFile = () => {
+    const worksheet = XLSX.utils.json_to_sheet(attendanceData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+    XLSX.writeFile(workbook, 'attendance.xlsx');
+  };  
+  
+
   // Hàm thoát phòng học
   const handleLeaveClass = () => {
     if (localStream) {
@@ -1338,12 +1488,17 @@ function ClassRoom() {
         <ButtonFeature onClick={() => togglePanel('chat')} title='Chat'>
           <FontAwesomeIcon icon={faComments} />
         </ButtonFeature>
-        <ButtonFeature onClick={() => togglePanel('attendance')} title='Điểm danh'>
-          <FontAwesomeIcon icon={faClipboardList} />
-        </ButtonFeature>
-        <ButtonFeature onClick={() => togglePanel('owner')} title='Bộ điều khiển'>
-          <FontAwesomeIcon icon={faCrown} />
-        </ButtonFeature>
+        {/* Chỉ hiển thị các tính năng này nếu người dùng là chủ phòng */}
+        {isOwner && (
+          <>
+            <ButtonFeature onClick={() => togglePanel('attendance')} title='Điểm danh'>
+              <FontAwesomeIcon icon={faClipboardList} />
+            </ButtonFeature>
+            <ButtonFeature onClick={() => togglePanel('owner')} title='Bộ điều khiển'>
+              <FontAwesomeIcon icon={faCrown} />
+            </ButtonFeature>
+          </>
+        )}
         </RightPanel>
       </MainControl>
 
@@ -1360,7 +1515,7 @@ function ClassRoom() {
           </FindContainer>
 
           {/* Hiển thị yêu cầu tham gia nếu có */}
-          {joinRequests.length > 0 && (
+          {isOwner && hasJoinRequests && (
           <JoinRequestsContainer>
             <HeaderPanel>Yêu cầu tham gia</HeaderPanel>
             <RequestList>
@@ -1395,9 +1550,6 @@ function ClassRoom() {
               <EmptyMessage>Chưa có học viên nào trong lớp</EmptyMessage>
             )}
           </ParticipantList>
-
-
-
         </FloatingPanel>
       )}
 
@@ -1461,7 +1613,43 @@ function ClassRoom() {
       {activePanel === 'attendance' && (
         <FloatingPanel>
           <HeaderPanel>Điểm danh</HeaderPanel>
-          
+          {/* Table */}
+          <TableContainer>
+          <Table>
+            <thead>
+              <tr>
+                {attendanceData.length > 0 && 
+                  attendanceData[0].map((header, index) => (
+                    <TableHeader key={index}>{header}</TableHeader>
+                  ))
+                }
+              </tr>
+            </thead>
+            <tbody>
+              {attendanceData.slice(1).filter(row => row.some(cell => cell !== '')).map((row, index) => (
+                <TableRow key={index}>
+                  {row.map((cell, cellIndex) => (
+                    <TableData key={cellIndex}>{cell}</TableData>
+                  ))}
+                </TableRow>
+              ))}
+            </tbody>
+          </Table>
+        </TableContainer>
+          {/* Actions */}
+          <Actions>
+            {/* File Upload */}
+            <FileUploadIcon as="label" title="Tải file">
+              <FileUploadInput type="file" accept=".xlsx, .csv" onChange={handleFileUpload1} />
+              <FontAwesomeIcon icon={faPaperclip} />
+            </FileUploadIcon>
+
+            {/* Attendance Button */}
+            <ActionButton onClick={() => handleAttendance(participants)}>Điểm danh</ActionButton>
+
+            {/* Export File */}
+            <ActionButton onClick={handleExportFile}>Xuất file</ActionButton>
+          </Actions>
         </FloatingPanel>
       )}
 
