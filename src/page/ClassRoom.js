@@ -1336,10 +1336,17 @@ function ClassRoom() {
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [fileData, setFileData] = useState(null);
-
+  
   // Hàm xử lý khi tải file Excel
   const handleFileUpload1 = (e) => {
     const file = e.target.files[0];
+
+    // Kiểm tra nếu không có file nào được chọn
+    if (!file) {
+      console.log('Không có file nào được chọn.');
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -1354,7 +1361,8 @@ function ClassRoom() {
     };
 
     reader.readAsArrayBuffer(file);
-  }
+  };
+
 
   // Hàm xử lý điểm danh
   const handleAttendance = (users) => {
