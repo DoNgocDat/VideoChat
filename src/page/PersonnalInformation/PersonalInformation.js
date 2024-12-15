@@ -82,7 +82,7 @@ const ImgAvata = styled.img`
     height: 100%;
     border-radius: 50%;
     background-size: cover;
-`;
+`
 
 const UserNameLink = styled(Link)`
     text-decoration: none;

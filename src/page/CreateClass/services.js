@@ -16,7 +16,7 @@ import axios from 'axios';
 // };
 
 // Set the base URL for the API
-const API_URL = 'http://127.0.0.1:5000/auth/profile';
+const API_URL = 'http://127.0.0.1:5000';
 
 // Function to fetch user information based on access token
 export const getUserInfo = async () => {
@@ -31,7 +31,7 @@ export const getUserInfo = async () => {
         }
 
         // Send a GET request with the token in the Authorization header
-        const response = await axios.get(API_URL, {
+        const response = await axios.get(`${API_URL}/auth/profile`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
