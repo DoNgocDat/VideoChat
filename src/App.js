@@ -8,7 +8,7 @@ import CreateClass from './page/CreateClass/CreateClass';
 import RegisterPage from './page/register/Register';
 import PersonalInformation from './page/PersonnalInformation/PersonalInformation'
 import WaitingRoom from "./page/WaitingRoom/WaitingRoom";
-import ClassRoom from "./page/ClassRoom";
+import ClassRoom from "./page/ClassRoom/ClassRoom";
 import Attendance from "./page/Attendance/Attendance";
 import { SocketProvider } from "./page/socketContext";
 import { useParams } from 'react-router-dom';
