@@ -225,6 +225,8 @@ function PersonalInformation() {
             try {
                 await uploadAvatar(userInfo.loginName, file); // Gửi tệp lên server
                 console.log('Upload successful');
+                // Tải lại trang sau khi cập nhật ảnh đại diện thành công
+                window.location.reload();
             } catch (error) {
                 console.error('Upload failed:', error);
             } finally {
@@ -234,7 +236,7 @@ function PersonalInformation() {
             console.error('No file selected or loginName is missing.');
         }
     };
-
+    
     // Lấy userId từ localStorage
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -247,54 +249,6 @@ function PersonalInformation() {
             navigate('/login');
         }
     }, [navigate]);
-
-    // useEffect(() => {
-    //     const fetchUserInfo = async () => {
-    //         try {
-    //             const data = await getUserInfo();
-    //             setUserInfo({
-    //                 loginName: data.loginName,
-    //                 name: data.fullName,
-    //                 birthDate: data.NgaySinh ? dayjs(data.NgaySinh).format("DD/MM/YYYY") : "N/A",
-    //                 gender: data.GioiTinh || "N/A",
-    //                 address: data.DiaChi || "N/A",
-    //                 phone: data.SoDienThoai || "N/A",
-    //                 email: data.email,
-    //                 avata: data.AnhDaiDien,
-    //             });
-    //         } catch (error) {
-    //             console.error('Could not fetch user information:', error);
-    //             navigate('/login'); // Optional: Redirect to login if token is invalid or missing
-    //         }
-    //     };
-
-    //     fetchUserInfo();
-    // }, [navigate]);
-
-    // useEffect(() => {
-    //     const fetchUserInfo = async () => {
-    //         try {
-    //             const data = await getUserInfo();
-    //             const BASE_URL = 'http://127.0.0.1:5000'; // URL gốc của server
-
-    //             setUserInfo({
-    //                 loginName: data.loginName,
-    //                 name: data.fullName,
-    //                 birthDate: data.NgaySinh ? dayjs(data.NgaySinh).format("DD/MM/YYYY") : "N/A",
-    //                 gender: data.GioiTinh || "N/A",
-    //                 address: data.DiaChi || "N/A",
-    //                 phone: data.SoDienThoai || "N/A",
-    //                 email: data.email,
-    //                 avatar: data.AnhDaiDien ? `${BASE_URL}${data.AnhDaiDien}` : null, // Xử lý URL ảnh đại diện
-    //             });
-    //         } catch (error) {
-    //             console.error('Could not fetch user information:', error);
-    //             navigate('/login'); // Optional: Redirect to login if token is invalid or missing
-    //         }
-    //     };
-
-    //     fetchUserInfo();
-    // }, [navigate]);
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -393,37 +347,7 @@ function PersonalInformation() {
                 if (isPasswordChanging) togglePasswordChange(); // Đóng drawer đổi mật khẩu khi bấm vào overlay
             }} />
             <ContentWrapper style={{ opacity: isEditing || isPasswordChanging ? 0.5 : 1 }}>
-                {/* <AvatarWrapper>
-                    <ButtonAvata>
-                        <ImgAvata src={userInfo ? userInfo.avata : Avata}/>
-                    </ButtonAvata>
-                    <br />
-                    <UserNameLink>{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
-                </AvatarWrapper> */}
-                {/* <AvatarWrapper>
-                    <ButtonAvata onClick={handleButtonAvataClick}>
-                        <ImgAvata
-                            src={avatarUrl || Avata}
-                            alt="User Avatar"
-                        />
-                    </ButtonAvata>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        accept="uploads/*"
-                        onChange={handleFileChange}
-                    />
-                    <br />
-                    <UserNameLink>{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
-                </AvatarWrapper> */}
                 <AvatarWrapper>
-                    {/* <ButtonAvata onClick={handleButtonAvataClick}>
-                        <ImgAvata
-                            src={userInfo?.avatar || Avata} // Nếu avatar có giá trị, dùng avatar từ API, nếu không hiển thị ảnh mặc định
-                            alt="User Avatar"
-                        />
-                    </ButtonAvata> */}
                     <ButtonAvata onClick={handleButtonAvataClick}>
                         <ImgAvata
                             src={userInfo?.avatar || Avata} // Nếu avatar tồn tại, dùng avatar từ API, nếu không hiển thị ảnh mặc định
