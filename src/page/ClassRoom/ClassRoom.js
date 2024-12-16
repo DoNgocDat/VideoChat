@@ -7,8 +7,9 @@ import { faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faChalkboard, f
 
 // import useWebRTC from '../page/useWebRTC';
 // import io from 'socket.io-client'; // Import socket.io-client
-import { useSocketContext } from './socketContext';
+import { useSocketContext } from '../socketContext';
 import * as XLSX from 'xlsx';
+import { saveAttendance } from './services';
 
 const Container = styled.div`
   display: flex;
@@ -1288,6 +1289,7 @@ function ClassRoom() {
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [fileData, setFileData] = useState(null);
+  const [attendance, setAttendance] = useState(false);
   const [isAttendanceExported, setIsAttendanceExported] = useState(false);
   
   // Hàm xử lý khi tải file Excel
@@ -1318,58 +1320,67 @@ function ClassRoom() {
 
   // Hàm xử lý điểm danh
   const handleAttendance = (users) => {
-    // Kiểm tra nếu chưa tải file
     if (!fileData) {
-      console.error('Chưa có file nào được tải lên. Vui lòng tải file trước khi điểm danh.');
       alert('Chưa có file nào được tải lên. Vui lòng tải file trước khi điểm danh.');
       return;
     }
-
-    // Kiểm tra xem danh sách người tham gia có hợp lệ không
+  
     if (!Array.isArray(users) || users.length === 0) {
-      console.error('Danh sách người tham gia không hợp lệ:', users);
+      alert('Danh sách người tham gia không hợp lệ.');
       return;
     }
   
-    console.log('Danh sách người tham gia từ socket:', users);
+    const today = new Date().toISOString().split('T')[0]; // Ngày hiện tại (YYYY-MM-DD)
+    const headers = fileData[0]; // Lấy hàng tiêu đề
+    let dateColumnIndex = headers.indexOf('Ngày');
+    let attendanceColumnIndex = headers.indexOf('Đi học');
+    let classCodeColumnIndex = headers.indexOf('Mã lớp');
   
-    // Lấy ngày hiện tại
-    const today = new Date().toISOString().split('T')[0];
-    const headers = fileData[0]; // Tiêu đề
-    let dateColumnIndex = headers.indexOf(today);
-  
-    // Nếu ngày hôm nay chưa tồn tại trong tiêu đề, thêm mới
+    // Nếu chưa tìm thấy các cột, thêm chúng vào tiêu đề
     if (dateColumnIndex === -1) {
-      dateColumnIndex = headers.length;
-      headers.push(today);
-  
-      // Thêm cột trống cho các dòng dữ liệu
-      fileData.forEach((row, index) => {
-        if (index !== 0) row.push('');
-      });
+      headers.push('Ngày');
+      dateColumnIndex = headers.length - 1;
+    }
+    if (attendanceColumnIndex === -1) {
+      headers.push('Đi học');
+      attendanceColumnIndex = headers.length - 1;
+    }
+    if (classCodeColumnIndex === -1) {
+      headers.push('Mã lớp');
+      classCodeColumnIndex = headers.length - 1;
     }
   
     // Cập nhật dữ liệu điểm danh
     const updatedData = fileData.map((row, rowIndex) => {
-      if (rowIndex === 0) return row; // Dòng tiêu đề
+      if (rowIndex === 0) return row; // Bỏ qua dòng tiêu đề
   
       const [_, fullName, userName] = row;
   
-      // Kiểm tra xem học viên này có trong danh sách `users` từ socket không
+      // Kiểm tra xem học viên có trong danh sách tham gia không
       const isPresent = users.some(
         (user) => user.fullName === fullName && user.userName === userName
       );
   
-      // Đánh dấu 'T' nếu có mặt, ngược lại là 'F'
-      row[dateColumnIndex] = isPresent ? 'T' : 'F';
+      // Cập nhật dữ liệu vào các cột tương ứng
+      row[dateColumnIndex] = today;
+      row[attendanceColumnIndex] = isPresent ? 'T' : 'F';
+      row[classCodeColumnIndex] = classCode;
+  
       return row;
     });
-  
-    console.log('Updated Attendance Data:', updatedData);
     setAttendanceData([...updatedData]); // Cập nhật state
+    console.log(updatedData);
+    setAttendance(true);
+    alert('Điểm danh thành công!');
   };
   
-  const handleExportFile = () => {
+  
+  const handleExportFile = async () => {
+    if (!attendance) {
+      alert("Vui lòng điểm danh trước khi xuất file.");
+      return;
+    }
+
     if (attendanceData.length > 0) {
       try {
         const worksheet = XLSX.utils.aoa_to_sheet(attendanceData);
@@ -1380,6 +1391,20 @@ function ClassRoom() {
         // Chỉ đặt isAttendanceExported thành true sau khi file được lưu thành công
         setIsAttendanceExported(true);
         console.log("File đã được xuất thành công.");
+
+        // Gửi dữ liệu đã điểm danh tới server
+        const dataToSend = attendanceData.slice(1).map((row) => ({
+          HoTen: row[1], // Họ tên
+          TenDangNhap: row[2], // Tên đăng nhập
+          Ngay: row[3], // Ngày
+          DiHoc: row[4], // Trạng thái Đi học
+          MaLop: row[5], // Mã lớp
+        }));
+
+        console.log("Dữ liệu gửi đi:", dataToSend);
+
+        // await saveAttendance(dataToSend);
+        console.log("Dữ liệu điểm danh đã được gửi thành công tới server.");
       } catch (error) {
         console.error("Lỗi khi xuất file:", error);
       }
@@ -1390,16 +1415,18 @@ function ClassRoom() {
   const handleLeaveClass = () => {
     console.log("isOwner:", isOwner, "isAttendanceExported:", isAttendanceExported);
   
-    const shouldExport = isOwner && isAttendanceExported;
-    console.log("shouldExport:", shouldExport);
-    
-    if (!shouldExport) {
-      const confirmExport = window.confirm(
-        "Bạn chưa xuất file điểm danh. Bạn có muốn xuất file trước khi rời lớp không?"
-      );
+    // Nếu là chủ phòng và chưa xuất file thì hiện thông báo
+    if (isOwner) {
+      const shouldExport = isAttendanceExported;
 
-      if (confirmExport) {
-        handleExportFile(); 
+      if (!shouldExport) {
+        const confirmExport = window.confirm(
+          "Bạn chưa xuất file điểm danh. Bạn có muốn xuất file trước khi rời lớp không?"
+        );
+
+        if (confirmExport) {
+          handleExportFile();
+        }
       }
     }
 
