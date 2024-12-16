@@ -1403,7 +1403,7 @@ function ClassRoom() {
 
         console.log("Dữ liệu gửi đi:", dataToSend);
 
-        await saveAttendance(dataToSend);
+        // await saveAttendance(dataToSend);
         console.log("Dữ liệu điểm danh đã được gửi thành công tới server.");
       } catch (error) {
         console.error("Lỗi khi xuất file:", error);
