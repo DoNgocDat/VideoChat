@@ -618,200 +618,349 @@ function ClassRoom() {
   const currentOtherUser = useRef(null);
 
 
-  const createPeerConnection = useCallback((otherUser) => {
-    if (!otherUser) {
-      console.error("Không có thông tin otherUser để tạo kết nối");
-      return null;
+  const createPeerConnection = useCallback(() => {
+    // Nếu PeerConnection đang tồn tại và hoạt động, sử dụng lại nó.
+    if (peerConnection.current && peerConnection.current.signalingState !== "closed") {
+      console.warn("Sử dụng lại PeerConnection hiện tại.");
+      return peerConnection.current;
     }
   
+    // Dọn dẹp PeerConnection cũ nếu cần
     if (peerConnection.current) {
-      console.log("Trạng thái hiện tại của PeerConnection:", peerConnection.current.signalingState);
-      if (peerConnection.current.signalingState !== "closed") {
-          console.warn("PeerConnection hiện tại đang hoạt động, không tạo mới.");
-          return peerConnection.current;
-      }
+      console.log("Đóng PeerConnection cũ.");
+      peerConnection.current.ontrack = null;
+      peerConnection.current.onicecandidate = null;
+      peerConnection.current.oniceconnectionstatechange = null;
+  
       try {
-          peerConnection.current.close();
-          console.log("Đóng kết nối cũ thành công.");
+        peerConnection.current.close();
       } catch (error) {
-          console.warn("Lỗi khi đóng kết nối cũ:", error);
+        console.error("Lỗi khi đóng PeerConnection:", error);
       }
+      peerConnection.current = null;
     }
-
+  
     // Tạo PeerConnection mới
     const pc = new RTCPeerConnection({
-        iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "turn:your-turn-server.com", username: "user", credential: "password" },
-        ],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:turn.anyfirewall.com:443?transport=tcp",
+          username: "webrtc",
+          credential: "webrtc",
+        },
+      ],
     });
-
-    // Đăng ký sự kiện signaling state
-    pc.onsignalingstatechange = () => {
-        console.log("Trạng thái tín hiệu:", pc.signalingState);
-    };
-
-    // Đăng ký sự kiện trạng thái ICE
-    peerConnection.oniceconnectionstatechange = () => {
-      console.log("Trạng thái ICE:", peerConnection.iceConnectionState);
-      if (peerConnection.iceConnectionState === "connected") {
-          console.log("Kết nối ICE thành công!");
-      } else if (peerConnection.iceConnectionState === "failed") {
-          console.error("Kết nối ICE thất bại. Kiểm tra cấu hình STUN/TURN.");
-          pc.restartIce(); // Khởi động lại ICE nếu thất bại
+  
+    // Gắn các sự kiện cho PeerConnection mới
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("ice-candidate", {
+          candidate: event.candidate,
+          room: classCode,
+          senderId: myUserId,
+        });
+      } else {
+        console.log("Không còn ICE candidate.");
       }
     };
   
-    // Đăng ký sự kiện ICE candidate
-    pc.onicecandidate = (event) => {
-      console.log("Gửi ICE candidate:", event.candidate);
-      console.log("Target userId:", otherUser);
-        if (event.candidate && otherUser) {
-            socket.emit("ice-candidate", {
-                candidate: event.candidate,
-                targetUserId: parseInt(otherUser.userId, 10),
-                senderUserId: myUserId
-            });
-        } else {
-            console.warn("Không có thêm ICE candidate.");
-        }
-    };
-
-    // Đăng ký sự kiện track từ remote peer
     pc.ontrack = (event) => {
       const [stream] = event.streams;
       if (!remoteStreams.find((s) => s.id === stream.id)) {
-          setRemoteStreams((prev) => [...prev, stream]);
-          console.log("Thêm stream mới:", stream.id);
-      } else {
-          console.log("Stream đã tồn tại:", stream.id);
+        setRemoteStreams((prev) => [...prev, stream]);
       }
-  };
+    };
   
-
-    peerConnection.current = pc; // Lưu kết nối hiện tại
+    pc.oniceconnectionstatechange = () => {
+      console.log("Trạng thái ICE:", pc.iceConnectionState);
+      if (pc.iceConnectionState === "failed") {
+        console.error("Kết nối ICE thất bại. Khởi động lại ICE.");
+        pc.restartIce();
+      }
+    };
+  
+    pc.onsignalingstatechange = () => {
+      console.log("Trạng thái tín hiệu:", pc.signalingState);
+    };
+  
+    peerConnection.current = pc;
     return pc;
-  }, [socket, myUserId, remoteStreams]);
+  }, [socket, classCode, myUserId, remoteStreams]);  
+
+  // Cập nhật createPeerConnection để chỉ gửi tín hiệu đến SFU
+  
+  // const createPeerConnection = useCallback(() => {
+  //   if (peerConnection.current) {
+  //     // Nếu kết nối hiện tại chưa đóng, đóng nó trước
+  //     if (peerConnection.current.signalingState !== 'closed') {
+  //       peerConnection.current.close();
+  //     }
+  //   }
+
+  //   const pc = new RTCPeerConnection({
+  //     iceServers: [
+  //       { urls: 'stun:stun.l.google.com:19302' },
+  //       { urls: 'turn:your-turn-server.com', username: 'user', credential: 'password' },
+  //     ],
+  //   });
+
+  //   // Kiểm tra socket và classCode trước khi đăng ký sự kiện ICE
+  //   const handleIceCandidate = (event) => {
+  //     if (!socket) {
+  //       console.warn('Socket chưa được khởi tạo. Không thể gửi ICE candidate.');
+  //       return;
+  //     }
+
+  //     if (!classCode) {
+  //       console.warn('Mã lớp học không hợp lệ. Không thể gửi ICE candidate.');
+  //       return;
+  //     }
+
+  //     if (event.candidate) {
+  //       try {
+  //         socket.emit('ice-candidate', { 
+  //           candidate: event.candidate, 
+  //           room: classCode,
+  //           senderId: myUserId,
+  //         });
+  //       } catch (error) {
+  //         console.error('Lỗi khi gửi ICE candidate:', error);
+  //       }
+  //     }
+  //   };
+
+  //   // Đăng ký sự kiện ICE candidate với hàm kiểm tra
+  //   pc.onicecandidate = handleIceCandidate;
+
+  //   // Đăng ký sự kiện track
+  //   pc.ontrack = (event) => {
+  //     const [stream] = event.streams;
+  //     if (!remoteStreams.find((s) => s.id === stream.id)) {
+  //       setRemoteStreams((prev) => [...prev, stream]);
+  //     }
+  //   };
+
+  //   peerConnection.current = pc;
+  //   return pc;
+  // }, [socket, classCode, remoteStreams]);
+
 
   useEffect(() => {
     console.log("Cập nhật remoteStreams:", remoteStreams);
   }, [remoteStreams]);
 
-  useEffect(() => {
-    const setupPeerConnection = async () => {
-        let localMediaStream = null;
-
-        try {
-            // Tạo PeerConnection
-            const pc = createPeerConnection();
-
-            // Lấy luồng media từ thiết bị
-            try {
-                localMediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true,
-                });
-                setLocalStream(localMediaStream);
-                // console.log("Lấy được luồng media từ thiết bị:", localMediaStream);
-            } catch (mediaError) {
-                console.error("Lỗi truy cập media:", mediaError);
-
-                // Thử luồng giả lập nếu không truy cập được thiết bị
-                const simulatedStream = createSimulatedStream();
-                if (simulatedStream) {
-                    localMediaStream = simulatedStream;
-                    setLocalStream(simulatedStream);
-                    console.warn("Sử dụng luồng giả lập do lỗi truy cập thiết bị");
-                } else {
-                    throw new Error("Không thể tạo luồng media");
-                }
-            }
-            const addedTrackIds = new Set(); // Lưu các track đã thêm
-
-            // Thêm track vào PeerConnection
-            if (localMediaStream && pc.signalingState !== "closed") {
-                localMediaStream.getTracks().forEach((track) => {
-                    try {
-                      if (!addedTrackIds.has(track.id)) {
-                        pc.addTrack(track, localMediaStream);
-                        addedTrackIds.add(track.id);
-                        console.log("Track được thêm vào PeerConnection:", track);
-                      }
-                    } catch (addTrackError) {
-                        console.error("Lỗi khi thêm track:", addTrackError);
-
-                        // Nếu không thể thêm track, tạo lại PeerConnection
-                        pc = createPeerConnection();
-                        pc.addTrack(track, localMediaStream);
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Lỗi thiết lập kết nối peer:", error);
+  // useEffect(() => {
+  //   const setupPeerConnection = async () => {
+  //     let localMediaStream = null;
+  
+  //     try {
+  //       // Kiểm tra nếu PeerConnection đã tồn tại và còn hoạt động
+  //       if (peerConnection.current && peerConnection.current.signalingState !== "closed") {
+  //         console.log("PeerConnection đã tồn tại, sử dụng lại.");
+  //         console.log("PeerConnection hiện tại:", peerConnection.current);
+  //         return; // Thoát sớm, không tạo mới
+  //       }
+  
+  //       // Chỉ tạo mới PeerConnection nếu cần
+  //       const pc = createPeerConnection();
+  //       peerConnection.current = pc; // Gán PeerConnection vào biến toàn cục
+  
+  //       // Lấy luồng media từ thiết bị
+  //       try {
+  //         localMediaStream = await navigator.mediaDevices.getUserMedia({
+  //           video: true,
+  //           audio: true,
+  //         });
+  //         setLocalStream(localMediaStream);
+  //         console.log("Lấy được luồng media từ thiết bị.");
+  //       } catch (mediaError) {
+  //         console.error("Lỗi truy cập media:", mediaError);
+  
+  //         // Nếu không truy cập được thiết bị, sử dụng luồng giả lập
+  //         const simulatedStream = createSimulatedStream();
+  //         if (simulatedStream) {
+  //           localMediaStream = simulatedStream;
+  //           setLocalStream(simulatedStream);
+  //           console.warn("Sử dụng luồng giả lập do lỗi truy cập thiết bị.");
+  //         } else {
+  //           throw new Error("Không thể tạo luồng media.");
+  //         }
+  //       }
+  
+  //       // Thêm các track vào PeerConnection
+  //       const addedTrackIds = new Set();
+  //       if (localMediaStream) {
+  //         localMediaStream.getTracks().forEach((track) => {
+  //           if (!addedTrackIds.has(track.id)) {
+  //             try {
+  //               pc.addTrack(track, localMediaStream);
+  //               addedTrackIds.add(track.id);
+  //               console.log("Track được thêm vào PeerConnection:", track);
+  //             } catch (addTrackError) {
+  //               console.error("Lỗi khi thêm track vào PeerConnection:", addTrackError);
+  //             }
+  //           }
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error("Lỗi khi thiết lập PeerConnection:", error);
+  //     }
+  
+  //     // Cleanup khi component unmount
+  //     return () => {
+  //       if (localMediaStream) {
+  //         localMediaStream.getTracks().forEach((track) => track.stop());
+  //         console.log("Dừng tất cả các track của luồng media.");
+  //       }
+  //       if (peerConnection.current) {
+  //         peerConnection.current.ontrack = null;
+  //         peerConnection.current.onicecandidate = null;
+  //         peerConnection.current.oniceconnectionstatechange = null;
+  //         peerConnection.current.close();
+  //         peerConnection.current = null;
+  //         console.log("Đóng và xóa PeerConnection.");
+  //       }
+  //     };
+  //   };
+  
+  //   setupPeerConnection();
+  // }, [createPeerConnection]);
+  const setupPeerConnection = useCallback(async () => {
+    let localMediaStream = null;
+  
+    try {
+      if (peerConnection.current && peerConnection.current.signalingState !== "closed") {
+        console.log("PeerConnection đã tồn tại, sử dụng lại.");
+        return true;
+      }
+  
+      const pc = createPeerConnection();
+      peerConnection.current = pc;
+  
+      try {
+        localMediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        setLocalStream(localMediaStream);
+        console.log("Lấy được luồng media từ thiết bị.");
+      } catch (mediaError) {
+        console.error("Lỗi truy cập media:", mediaError);
+  
+        const simulatedStream = createSimulatedStream();
+        if (simulatedStream) {
+          localMediaStream = simulatedStream;
+          setLocalStream(simulatedStream);
+          console.warn("Sử dụng luồng giả lập do lỗi truy cập thiết bị.");
+        } else {
+          throw new Error("Không thể tạo luồng media.");
         }
-
-        // Dọn dẹp khi component unmount
-        return () => {
-            if (localMediaStream) {
-                localMediaStream.getTracks().forEach((track) => track.stop());
-                console.log("Dừng tất cả các track của luồng media.");
+      }
+  
+      const addedTrackIds = new Set();
+      if (localMediaStream) {
+        localMediaStream.getTracks().forEach((track) => {
+          if (!addedTrackIds.has(track.id)) {
+            try {
+              pc.addTrack(track, localMediaStream);
+              addedTrackIds.add(track.id);
+              console.log("Track được thêm vào PeerConnection:", track);
+            } catch (addTrackError) {
+              console.error("Lỗi khi thêm track vào PeerConnection:", addTrackError);
             }
-            if (peerConnection.current) {
-                peerConnection.current.close();
-                peerConnection.current = null;
-                console.log("Đóng và xóa PeerConnection.");
-            }
-        };
-    };
-
-    setupPeerConnection();
-  }, [createPeerConnection]);
+          }
+        });
+      }
+  
+      return true;
+    } catch (error) {
+      console.error("Lỗi khi thiết lập PeerConnection:", error);
+      return false;
+    }
+  }, [peerConnection, createPeerConnection, setLocalStream]);
+  
 
   const retryCounts = useRef(new Map()); // Theo dõi số lần thử
   const MAX_RETRIES = 5; // Giới hạn số lần gửi offer
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem('userId');
-    if (storedUserId) {
-      setMyUserId(storedUserId);
+    // const storedUserId = localStorage.getItem('userId');
+    if (id) {
+      setMyUserId(id);
     }
-  }, []);
+  }, [id]);
 
-  const initiateWebRTCConnection = useCallback(async (otherUser) => {
-    currentOtherUser.current = otherUser; // Cập nhật giá trị vào ref
+//   const initiateWebRTCConnection = useCallback(async (otherUser) => {
+//     currentOtherUser.current = otherUser; // Cập nhật giá trị vào ref
 
-    try {
-        console.log('--- Bắt đầu khởi tạo WebRTC Connection ---');
-        console.log('Target userId:', otherUser.userId);
+//     try {
+//         console.log('--- Bắt đầu khởi tạo WebRTC Connection ---');
+//         console.log('Target userId:', otherUser.userId);
 
-        const pc = createPeerConnection(currentOtherUser.current);
-        console.log('Đã khởi tạo PeerConnection:', pc , ' với người dùng: ', currentOtherUser.current);
+//         const pc = createPeerConnection(currentOtherUser.current);
+//         console.log('Đã khởi tạo PeerConnection:', pc , ' với người dùng: ', currentOtherUser.current);
 
-        const offer = await pc.createOffer();
-        console.log('Đã tạo offer:', offer);
+//         const offer = await pc.createOffer();
+//         console.log('Đã tạo offer:', offer);
 
-        await pc.setLocalDescription(offer);
-        console.log('Đã đặt local description:', pc.localDescription);
+//         await pc.setLocalDescription(offer);
+//         console.log('Đã đặt local description:', pc.localDescription);
 
-        socket.emit('offer', {
-            offer,
-            targetUserId: parseInt(otherUser.userId, 10),
-            senderUserId: myUserId, // Thêm ID của người gửi
-        });
-        console.log('Đã gửi offer tới targetUserId:', otherUser.userId, 'từ senderUserId:', myUserId);
+//         socket.emit('offer', {
+//             offer,
+//             targetUserId: parseInt(otherUser.userId, 10),
+//             senderUserId: myUserId, // Thêm ID của người gửi
+//         });
+//         console.log('Đã gửi offer tới targetUserId:', otherUser.userId, 'từ senderUserId:', myUserId);
 
-        const currentRetries = retryCounts.current.get(otherUser.userId) || 0;
-        retryCounts.current.set(otherUser.userId, currentRetries + 1);
-        console.log('Số lần gửi offer cho userId:', otherUser.userId, '->', currentRetries + 1);
+//         const currentRetries = retryCounts.current.get(otherUser.userId) || 0;
+//         retryCounts.current.set(otherUser.userId, currentRetries + 1);
+//         console.log('Số lần gửi offer cho userId:', otherUser.userId, '->', currentRetries + 1);
 
-        if (currentRetries + 1 >= MAX_RETRIES) {
-            console.warn(`Đạt giới hạn gửi offer cho userId: ${otherUser.userId}`);
-            offeredUsers.current.delete(otherUser.userId);
-        }
-    } catch (error) {
-        console.error('Lỗi khi tạo offer:', error);
+//         if (currentRetries + 1 >= MAX_RETRIES) {
+//             console.warn(`Đạt giới hạn gửi offer cho userId: ${otherUser.userId}`);
+//             offeredUsers.current.delete(otherUser.userId);
+//         }
+//     } catch (error) {
+//         console.error('Lỗi khi tạo offer:', error);
+//     }
+// }, [socket, createPeerConnection, myUserId]);
+
+// Khởi tạo kết nối WebRTC và gửi offer đến server
+const initiateWebRTCConnection = useCallback(async () => {
+  try {
+    // Gọi hàm thiết lập PeerConnection
+    const isPeerConnectionReady = await setupPeerConnection();
+
+    if (!isPeerConnectionReady) {
+      console.error("PeerConnection không được thiết lập, dừng quá trình.");
+      return;
     }
-}, [socket, createPeerConnection, myUserId]);
+
+    // Sử dụng PeerConnection hiện tại
+    const pc = peerConnection.current;
+
+    // Kiểm tra trạng thái signaling trước khi tạo offer
+    if (pc.signalingState !== "stable") {
+      console.warn(
+        `Không thể tạo offer trong trạng thái signaling: ${pc.signalingState}`
+      );
+      return;
+    }
+
+    // Tạo và gửi offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    // Gửi offer lên server SFU
+    socket.emit("offer", { offer, room: classCode, senderId: myUserId });
+    console.log("Đã gửi offer đến SFU:", offer);
+  } catch (error) {
+    console.error("Lỗi khi khởi tạo WebRTC:", error);
+  }
+}, [setupPeerConnection, peerConnection, socket, classCode, myUserId]);
+
 
 
 
@@ -913,24 +1062,110 @@ function ClassRoom() {
     socket.emit('join-room', { classCode, userId: userId, fullName: fullName, userName: userName});
     console.log(`Đã tham gia phòng: ${classCode}`);
 
+    initiateWebRTCConnection();
+
+    const handleOffer = async (data) => {
+      try {
+        if (!data?.offer) {
+          console.error("Dữ liệu offer không hợp lệ:", data);
+          return;
+        }
+    
+        let pc = peerConnection.current;
+        if (!pc || pc.signalingState === "closed") {
+          console.log("PeerConnection chưa tồn tại hoặc đã bị đóng. Tạo mới.");
+          pc = createPeerConnection();
+          peerConnection.current = pc; // Gán lại giá trị mới
+        }
+    
+        // Nếu trạng thái ICE không ổn định, khởi động lại
+        if (pc.iceConnectionState === "failed" || pc.signalingState !== "stable") {
+          console.warn("Trạng thái không ổn định, khởi động lại ICE.");
+          pc.restartIce();
+        }
+    
+        // Đặt remote description
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        console.log("Đã thiết lập remote description với offer.");
+    
+        // Tạo answer
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        console.log("Đã tạo và đặt local description với answer.");
+    
+        // Gửi answer trở lại server
+        socket.emit("answer", {
+          answer: pc.localDescription,
+          room: classCode,
+          senderId: myUserId,
+        });
+      } catch (error) {
+        console.error("Lỗi khi xử lý offer:", error);
+      }
+    };
+    
+
+  
+    const handleAnswer = async (data) => {
+      try {
+        if (!peerConnection.current) {
+          console.warn('No active peer connection');
+          return;
+        }
+    
+      // Kiểm tra trạng thái
+      if (peerConnection.current.signalingState !== 'have-local-offer') {
+        console.warn('Invalid signaling state for setting remote answer:', peerConnection.current.signalingState);
+        return;
+      }
+    
+        const remoteDesc = new RTCSessionDescription(data.answer);
+        await peerConnection.current.setRemoteDescription(remoteDesc);
+        console.log('Remote description set successfully');
+      } catch (error) {
+        console.error('Error handling answer:', error);
+      }
+    };
+  
+    const handleIceCandidate = async (data) => {
+      if (!peerConnection.current || !data.candidate) {
+        console.warn("Không có PeerConnection hoặc candidate không hợp lệ.");
+        return;
+      }
+      try {
+        await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+        console.log("Đã thêm ICE candidate thành công.");
+      } catch (error) {
+        console.error("Lỗi khi thêm ICE candidate:", error);
+      }
+    };
+    
+  
+    // Đăng ký các event listener
+    socket.on('offer', handleOffer);
+    socket.on('answer', handleAnswer);
+    socket.on('ice-candidate', handleIceCandidate);
+
     // Lắng nghe danh sách người tham gia
     socket.on('room-users', (users) => {
       console.log('Danh sách người dùng trong phòng:', users);
+      setParticipants(users);
+
       
       // So sánh trước khi cập nhật
-      const previousUsers = participants.map((p) => p.userId);
-      const currentUsers = users.map((u) => u.userId);
+      // const previousUsers = participants.map((p) => p.userId);
+      // const currentUsers = users.map((u) => u.userId);
   
-      if (JSON.stringify(previousUsers) !== JSON.stringify(currentUsers)) {
-          setParticipants(users);
-          console.log('Cập nhật danh sách người dùng:', users);
+      // if (JSON.stringify(previousUsers) !== JSON.stringify(currentUsers)) {
+      //     setParticipants(users);
+      //     console.log('Cập nhật danh sách người dùng:', users);
   
-          if (typeof handleUserList === 'function') {
-              handleUserList(users);
-          }
-      } else {
-          console.log('Danh sách người dùng không thay đổi.');
-      }
+      //     if (typeof handleUserList === 'function') {
+      //         handleUserList(users);
+      //     }
+      // } else {
+      //     console.log('Danh sách người dùng không thay đổi.');
+      // }
     });
   
 
@@ -970,7 +1205,7 @@ function ClassRoom() {
       // }
     });
 
-    // // Lắng nghe offer từ WebRTC
+    // Lắng nghe offer từ WebRTC
     // socket.on('offer', async (offer) => {
     //     console.log('Nhận offer:', offer);
     //     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
@@ -982,31 +1217,31 @@ function ClassRoom() {
     // });
 
     // Nhận offer
-    socket.on("offer", async (data) => {
-      console.log("Nhận offer đầy đủ:", data);
+    // socket.on("offer", async (data) => {
+    //   console.log("Nhận offer đầy đủ:", data);
   
-      if (!data || !data.offer || !data.senderUserId) {
-          console.error("Lỗi: Dữ liệu offer không hợp lệ. Dữ liệu nhận được:", data);
-          return;
-      }
+    //   if (!data || !data.offer || !data.senderUserId) {
+    //       console.error("Lỗi: Dữ liệu offer không hợp lệ. Dữ liệu nhận được:", data);
+    //       return;
+    //   }
   
-      try {
-          const pc = createPeerConnection();
-          await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-          console.log("Đã đặt remote description thành công.");
+    //   try {
+    //       const pc = createPeerConnection();
+    //       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+    //       console.log("Đã đặt remote description thành công.");
   
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
+    //       const answer = await pc.createAnswer();
+    //       await pc.setLocalDescription(answer);
   
-          socket.emit("answer", {
-              answer: pc.localDescription,
-              targetUserId: data.senderUserId, // Trả lời người gửi offer
-          });
-          console.log("Đã gửi answer tới senderUserId:", data.senderUserId);
-      } catch (error) {
-          console.error("Lỗi khi xử lý offer:", error);
-      }
-    });
+    //       socket.emit("answer", {
+    //           answer: pc.localDescription,
+    //           targetUserId: data.senderUserId, // Trả lời người gửi offer
+    //       });
+    //       console.log("Đã gửi answer tới senderUserId:", data.senderUserId);
+    //   } catch (error) {
+    //       console.error("Lỗi khi xử lý offer:", error);
+    //   }
+    // });
   
 
     // // Lắng nghe answer từ WebRTC
@@ -1016,20 +1251,31 @@ function ClassRoom() {
     // });
 
     // Nhận answer
-    socket.on('answer', async (data) => {
-      console.log('Nhận answer:', data.answer);
+    
+        // Nhận offer từ server SFU
+    
+    // socket.on('offer', async (data) => {
+    //   const pc = createPeerConnection();
+    //   await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+    //   const answer = await pc.createAnswer();
+    //   await pc.setLocalDescription(answer);
+    //   socket.emit('answer', { answer: pc.localDescription, room: classCode });
+    // });
+    
+    // socket.on('answer', async (data) => {
+    //   console.log('Nhận answer:', data.answer);
 
-      try {
-        await peerConnection.current.setRemoteDescription(
-          new RTCSessionDescription(data.answer)
-        );
-      } catch (error) {
-        console.error('Lỗi khi xử lý answer:', error);
-      }
+    //   try {
+    //     await peerConnection.current.setRemoteDescription(
+    //       new RTCSessionDescription(data.answer)
+    //     );
+    //   } catch (error) {
+    //     console.error('Lỗi khi xử lý answer:', error);
+    //   }
 
-      // Xóa số lần thử khi nhận được phản hồi
-      retryCounts.current.delete(data.senderUserId);
-    });
+    //   // Xóa số lần thử khi nhận được phản hồi
+    //   retryCounts.current.delete(data.senderUserId);
+    // });
 
 
     // // Lắng nghe ice-candidate từ WebRTC
@@ -1039,16 +1285,42 @@ function ClassRoom() {
     // });
 
     // Nhận ICE candidate
-    socket.on('ice-candidate', (data) => {
-      console.log('Nhận ICE candidate:', data.candidate);
+    
+    
+        // Nhận answer từ server SFU
+    
+    // socket.on('answer', async (data) => {
+    //   try {
+    //     if (peerConnection.current) {
+    //       await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+    //     }
+    //   } catch (error) {
+    //     console.error('Lỗi khi xử lý answer:', error);
+    //   }
+    // });
+    
+    // socket.on('ice-candidate', (data) => {
+    //   console.log('Nhận ICE candidate:', data.candidate);
 
-      try {
-        peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-        console.log("Thêm ICE candidate thành công:", data.candidate);
-      } catch (error) {
-        console.error('Lỗi khi thêm ICE candidate:', error);
-      }
-    });
+    //   try {
+    //     peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+    //     console.log("Thêm ICE candidate thành công:", data.candidate);
+    //   } catch (error) {
+    //     console.error('Lỗi khi thêm ICE candidate:', error);
+    //   }
+    // });
+
+        // Nhận ICE candidate từ server SFU
+    
+    // socket.on('ice-candidate', (data) => {
+    //   try {
+    //     if (peerConnection.current) {
+    //       peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+    //     }
+    //   } catch (error) {
+    //     console.error('Lỗi khi thêm ICE candidate:', error);
+    //   }
+    // });
 
     return () => {
         socket.emit('leave-room', { classCode });
