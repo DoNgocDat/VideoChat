@@ -16,3 +16,14 @@ export const saveAttendance = async (attendanceData) => {
         throw error;
     }
 };
+
+export const saveHistoryCall = async (historyCallData) => {
+    try {
+        const response = await axios.post(`${API_URL}/class/history-call`, historyCallData);
+        console.log("Dữ liệu đã được gửi thành công:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi gửi dữ liệu điểm danh:", error);
+        throw error;
+    }
+}
