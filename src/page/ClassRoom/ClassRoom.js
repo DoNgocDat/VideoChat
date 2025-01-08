@@ -472,8 +472,8 @@ const TableContainer = styled.div`
   border: 1px solid #ddd;
   border-radius: 5px;
   overflow: auto; /* Cuộn nội dung nếu vượt khung */
-  max-height: 400px; /* Giới hạn chiều cao khung */
-  max-height: calc(100% - 50px); /* Đảm bảo bảng không tràn qua phần nút */
+  max-height: 350px; /* Giới hạn chiều cao khung */
+  max-height: calc(100% - 90px); /* Đảm bảo bảng không tràn qua phần nút */
   color: #000000
 `;
 
@@ -1412,8 +1412,8 @@ function ClassRoom() {
     setAttendance(true);
     alert('Điểm danh thành công!');
   };
-
-
+  
+  // Hàm xuất file
   const handleExportFile = async () => {
     if (!attendance) {
       alert("Vui lòng điểm danh trước khi xuất file.");
@@ -1611,23 +1611,17 @@ function ClassRoom() {
 
         {/* Right: Additional Features */}
         <RightPanel>
-          <ButtonFeature onClick={() => togglePanel('participants')} title='Danh sách học viên'>
-            <FontAwesomeIcon icon={faUsers} />
-          </ButtonFeature>
-          <ButtonFeature onClick={() => togglePanel('chat')} title='Chat'>
-            <FontAwesomeIcon icon={faComments} />
-          </ButtonFeature>
-          {/* Chỉ hiển thị các tính năng này nếu người dùng là chủ phòng */}
-          {isOwner && (
-            <>
-              <ButtonFeature onClick={() => togglePanel('attendance')} title='Điểm danh'>
-                <FontAwesomeIcon icon={faClipboardList} />
-              </ButtonFeature>
-              <ButtonFeature onClick={() => togglePanel('owner')} title='Bộ điều khiển'>
-                <FontAwesomeIcon icon={faCrown} />
-              </ButtonFeature>
-            </>
-          )}
+        {/* Chỉ hiển thị các tính năng này nếu người dùng là chủ phòng */}
+        {isOwner && (
+          <>
+            <ButtonFeature onClick={() => togglePanel('attendance')} title='Điểm danh'>
+              <FontAwesomeIcon icon={faClipboardList} />
+            </ButtonFeature>
+            {/* <ButtonFeature onClick={() => togglePanel('owner')} title='Bộ điều khiển'>
+              <FontAwesomeIcon icon={faCrown} />
+            </ButtonFeature> */}
+          </>
+        )}
         </RightPanel>
       </MainControl>
 
