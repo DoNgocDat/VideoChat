@@ -16,7 +16,7 @@ import React, { useRef , useEffect} from "react";
 import { useSocketContext } from '../socketContext';
 
 
-import { getUserInfo, requestJoinClass } from './services';
+import { getUserInfo, getFullAvatarUrl, requestJoinClass } from './services';
 
 
 const BackgroundImg = styled.div`
@@ -85,14 +85,15 @@ const StyledLink = styled(Link)`
 `;
 
 const ButtonAvata = styled.button`
-    background-image: url(${Avata});
     background-size: cover;
     background-position: center;
     height: 40px;
     width: 40px;
-    border: none;
+    border-color: cornflowerblue;
     border-radius: 50%;
-    margin-right: 10px; /* Space between avatar and name */
+    margin-bottom: 10px;
+    margin-right: 10px;
+    padding: 0; /* Đảm bảo không có padding */
     cursor: pointer;
 `;
 
@@ -220,6 +221,13 @@ const Spinner = styled.div`
   }
 `;
 
+const ImgAvata = styled.img`
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+`;
+
 
 const variants = {
   hidden: { opacity: 0, y: 20 },
@@ -252,24 +260,29 @@ function WaitingRoom() {
       }
     }, [navigate]);
 
-    // Lấy thông tin người dùng khi userId thay đổi
-    useEffect(() => {
-      const fetchUserInfo = async () => {
+  // Lấy thông tin người dùng khi userId thay đổi
+  useEffect(() => {
+    const fetchUserInfo = async () => {
         try {
-          const data = await getUserInfo(userId);
-          setUserInfo({
-            name: data.fullName,
-          });
-        } catch (error) {
-          console.error('Không thể lấy thông tin người dùng:', error);
-          // navigate('/login'); // Điều hướng nếu không lấy được thông tin
-        }
-      };
+            const data = await getUserInfo(userId);
+            console.log("User Data:", data);  // Kiểm tra dữ liệu API trả về
 
-      if (userId) {
+            // Kiểm tra lại và xử lý avatar
+            const avatarUrl = data.AnhDaiDien ? getFullAvatarUrl(data.AnhDaiDien) : Avata; // Nếu không có ảnh, dùng ảnh mặc định
+
+            setUserInfo({
+                name: data.fullName,
+                avatar: avatarUrl,  // Sử dụng URL ảnh đã được tạo
+            });
+        } catch (error) {
+            console.error('Không thể lấy thông tin người dùng:', error);
+        }
+    };
+
+    if (userId) {
         fetchUserInfo();
-      }
-    }, [userId]);
+    }
+}, [userId]);
 
     const handlePersonalInformationClick = () => {
       navigate('/personal-information');
@@ -322,8 +335,8 @@ function WaitingRoom() {
                   audio: true,
               });
               console.log('Truy cập camera/microphone thành công.');
-              // setLocalStream(stream); // Sử dụng stream thật nếu thành công
-              localVideoRef.current = stream; // Lưu stream vào ref
+              setLocalStream(stream); // Sử dụng stream thật nếu thành công
+              // localVideoRef.current = stream; // Lưu stream vào ref
 
           } catch (error) {
               console.error('Lỗi khi truy cập camera/microphone:', error);
@@ -403,47 +416,6 @@ function WaitingRoom() {
 
     // Gửi yêu cầu tham gia lớp học
     const [isRequestSent, setIsRequestSent] = useState(false);
-
-    // qua chat bên chorme tím để cập nhật lại
-
-    // Khởi tạo socket và lắng nghe sự kiện
-  //   useEffect(() => {
-  //     if (!socket.current) {
-  //         socket.current = io('http://localhost:5000', {
-  //             query: {
-  //                 userId: localStorage.getItem('userId'),
-  //                 fullName: localStorage.getItem('full_name'),
-  //                 userName: localStorage.getItem('user_name'),
-  //                 classCode,
-  //             },
-  //         });
-
-  //         console.log('WebSocket được khởi tạo');
-
-  //         // Lắng nghe phản hồi phê duyệt/từ chối
-  //         socket.current.on('approval-response', (response) => {
-  //             console.log('Nhận phản hồi phê duyệt:', response);
-  //             if (response.status === 'approved') {
-  //                 console.log('Bạn đã được phê duyệt vào lớp học');
-  //                 navigate(`/classroom/${classCode}`); // Điều hướng vào lớp học
-  //             } else if (response.status === 'rejected') {
-  //                 alert('Yêu cầu của bạn đã bị từ chối.');
-  //                 setIsRequestSent(false); // Cho phép gửi lại
-  //             }
-  //             setIsLoading(false); // Tắt trạng thái chờ
-  //         });
-
-  //         // Cleanup khi component bị unmount
-  //         return () => {
-  //             if (socket.current) {
-  //                 socket.current.disconnect();
-  //                 socket.current = null;
-  //                 console.log('Socket đã ngắt kết nối');
-  //             }
-  //         };
-  //     }
-  // }, [classCode, navigate]);
-
   
   // Xử lý phản hồi từ server qua socket
   useEffect(() => {
@@ -532,9 +504,15 @@ function WaitingRoom() {
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata onClick={handlePersonalInformationClick} />
-          <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
-        </HeaderRight>
+          {/* <ButtonAvata onClick={handlePersonalInformationClick} /> */}
+          <ButtonAvata onClick={handlePersonalInformationClick}>
+            <ImgAvata
+              src={userInfo?.avatar || Avata} // Nếu avatar không hợp lệ, hiển thị ảnh mặc định
+              alt="User Avatar"
+            />
+          </ButtonAvata>
+        <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
+      </HeaderRight>
       </RouteLink>
 
       <BackgroundImg>

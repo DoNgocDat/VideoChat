@@ -10,6 +10,8 @@ import { uploadAvatar } from './services'
 import dayjs from 'dayjs';
 import { FaBars, FaSignOutAlt, FaClipboardList } from 'react-icons/fa';
 import { getFullAvatarUrl } from './services';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
 
 // Header (phần điều hướng trên cùng)
 const RouteLink = styled.nav`
@@ -48,7 +50,7 @@ const StyledLink = styled(Link)`
 
 // Phần nội dung chính
 const ContentWrapper = styled.div`
-    margin-top: 80px;
+    margin-top: 120px;
     padding: 20px;
     transition: opacity 0.3s ease;
 `;
@@ -192,6 +194,19 @@ const DropdownMenu = styled.div`
     display: ${(props) => (props.isOpen ? "block" : "none")};
 `;
 
+const StyledBackLink = styled.span`
+    position: absolute;
+    top: 100px;
+    left: 20px;
+    color: #222222;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: bold;
+    float: left;
+    z-index:10;
+`;
+
 // Main component
 function PersonalInformation() {
     const [isEditing, setIsEditing] = useState(false);
@@ -320,6 +335,10 @@ function PersonalInformation() {
 
     const avatarUrl = getFullAvatarUrl(userInfo?.AnhDaiDien);
 
+    const handleLeave = () => {
+        navigate('/create-class');
+      };
+
     return (
         <>
             <RouteLink>
@@ -341,6 +360,11 @@ function PersonalInformation() {
                     </DropdownMenu>
                 </HeaderRight>
             </RouteLink>
+
+            <StyledBackLink onClick={handleLeave}>
+                <FontAwesomeIcon icon={faArrowLeftLong} style={{marginRight: '8px'}} />
+                Quay lại
+            </StyledBackLink>
 
             <Overlay isEditing={isEditing || isPasswordChanging} onClick={() => {
                 if (isEditing) toggleEditing();

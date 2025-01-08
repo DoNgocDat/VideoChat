@@ -43,8 +43,8 @@ const VideoContainer = styled.div`
 const StyledVideo = styled.video`
     position: absolute;
     width: ${(props) => (props.isScreenSharing ? '20%' : '100%')}; /* Thu nhỏ khi chia sẻ màn hình */
-    height: ${(props) => (props.isScreenSharing ? '20%' : '103%')};
-    bottom: ${(props) => (props.isScreenSharing ? '10px' : '0')}; /* Đặt cách lề dưới khi chia sẻ màn hình */
+    height: ${(props) => (props.isScreenSharing ? '20%' : '100%')};
+    bottom: ${(props) => (props.isScreenSharing ? '10px' : '10px')}; /* Đặt cách lề dưới khi chia sẻ màn hình */
     right: ${(props) => (props.isScreenSharing ? '10px' : 'auto')}; /* Đặt cách lề phải khi chia sẻ màn hình */
     object-fit: cover;
     border-radius: 10px;
@@ -511,7 +511,7 @@ const TableData = styled.td`
 function ClassRoom() {
   const navigate = useNavigate();
   const { classCode } = useParams(); // Lấy mã lớp từ URL
-  const [currentTime, setCurrentTime] = useState('');
+  // const [currentTime, setCurrentTime] = useState('');
 
   const username = localStorage.getItem('full_name');
 
@@ -1425,7 +1425,10 @@ function ClassRoom() {
         const worksheet = XLSX.utils.aoa_to_sheet(attendanceData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
-        XLSX.writeFile(workbook, 'attendance.xlsx');
+
+        const now = new Date();
+
+        XLSX.writeFile(workbook, `diemdanh_${format(now, 'dd/MM/yyyy')}.xlsx`);
 
         // Chỉ đặt isAttendanceExported thành true sau khi file được lưu thành công
         setIsAttendanceExported(true);
@@ -1611,6 +1614,12 @@ function ClassRoom() {
 
         {/* Right: Additional Features */}
         <RightPanel>
+          <ButtonFeature onClick={() => togglePanel('participants')} title='Danh sách học viên'>
+            <FontAwesomeIcon icon={faUsers} />
+          </ButtonFeature>
+          <ButtonFeature onClick={() => togglePanel('chat')} title='Chat'>
+            <FontAwesomeIcon icon={faComments} />
+          </ButtonFeature>
         {/* Chỉ hiển thị các tính năng này nếu người dùng là chủ phòng */}
         {isOwner && (
           <>
