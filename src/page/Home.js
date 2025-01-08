@@ -398,66 +398,74 @@ function Home() {
         </ContainerContent>
 
         <SectionContainer>
-        {/* Phần Các Tính Năng Nổi Bật */}
-        <div>
-          <SectionTitle>Các tính năng nổi bật</SectionTitle>
-          <SectionDescription>
-            Khám phá những tính năng đặc biệt giúp Sky Video Chat trở nên khác biệt.
-          </SectionDescription>
-          <FeaturesGrid>
-            <FeatureCard>
-              <FeatureTitle>Họp trực tuyến chất lượng cao</FeatureTitle>
-              <FeatureDescription>
-                Tối ưu cho giáo viên và học sinh.
-              </FeatureDescription>
-              <FeatureImage src={ft1} alt="Kết nối nhanh chóng" />
-            </FeatureCard>
-            <FeatureCard>
-              <FeatureTitle>Giao diện thân thiện</FeatureTitle>
-              <FeatureDescription>
-                Dễ sử dụng, thích hợp cho mọi đối tượng.
-              </FeatureDescription>
-              <FeatureImage src={ft2} alt="Hỗ trợ 24/7" />
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            variants={variants}
+          >
+            {/* Phần Các Tính Năng Nổi Bật */}
+            <div>
+              <SectionTitle>Các tính năng nổi bật</SectionTitle>
+              <SectionDescription>
+                Khám phá những tính năng đặc biệt giúp Sky Video Chat trở nên khác biệt.
+              </SectionDescription>
+              <FeaturesGrid>
+                <FeatureCard>
+                  <FeatureTitle>Họp trực tuyến chất lượng cao</FeatureTitle>
+                  <FeatureDescription>
+                    Tối ưu cho giáo viên và học sinh.
+                  </FeatureDescription>
+                  <FeatureImage src={ft1} alt="Kết nối nhanh chóng" />
+                </FeatureCard>
+                <FeatureCard>
+                  <FeatureTitle>Giao diện thân thiện</FeatureTitle>
+                  <FeatureDescription>
+                    Dễ sử dụng, thích hợp cho mọi đối tượng.
+                  </FeatureDescription>
+                  <FeatureImage src={ft2} alt="Hỗ trợ 24/7" />
 
-            </FeatureCard>
-            <FeatureCard>
-              <FeatureTitle>Bảo mật hàng đầu</FeatureTitle>
-              <FeatureDescription>
-                Mọi dữ liệu được mã hóa an toàn.
-              </FeatureDescription>
-              <FeatureImage src={ft3} alt="Bảo mật hàng đầu" />
-            </FeatureCard>
-          </FeaturesGrid>
-        </div>
+                </FeatureCard>
+                <FeatureCard>
+                  <FeatureTitle>Bảo mật hàng đầu</FeatureTitle>
+                  <FeatureDescription>
+                    Mọi dữ liệu được mã hóa an toàn.
+                  </FeatureDescription>
+                  <FeatureImage src={ft3} alt="Bảo mật hàng đầu" />
+                </FeatureCard>
+              </FeaturesGrid>
+            </div>
 
-        {/* Phần Câu Hỏi Thường Gặp */}
-        <div style={{ marginTop: "48px" }}>
-          <SectionTitle>Câu hỏi thường gặp</SectionTitle>
-          <SectionDescription>
-            Những thắc mắc phổ biến của người dùng về Sky Video Chat.
-          </SectionDescription>
-          <FAQList>
-            <FAQItem>
-              <FAQQuestion>Làm thế nào để đăng ký tài khoản?</FAQQuestion>
-              <FAQAnswer>
-                Nhấn nút "Đăng ký" hoặc truy cập trang đăng ký. Điền thông tin cần thiết và xác nhận qua email.
-              </FAQAnswer>
-            </FAQItem>
-            <FAQItem>
-              <FAQQuestion>Sky Video Chat có thu phí không?</FAQQuestion>
-              <FAQAnswer>
-                Không toàn bộ đều miễn phí.
-              </FAQAnswer>
-            </FAQItem>
-            <FAQItem>
-              <FAQQuestion>Làm sao để liên hệ với đội hỗ trợ?</FAQQuestion>
-              <FAQAnswer>
-                Gửi email đến support@skyvideochat.com hoặc gọi hotline +84 123 456 789.
-              </FAQAnswer>
-            </FAQItem>
-          </FAQList>
-        </div>
-      </SectionContainer>
+            {/* Phần Câu Hỏi Thường Gặp */}
+            <div style={{ marginTop: "48px" }}>
+              <SectionTitle>Câu hỏi thường gặp</SectionTitle>
+              <SectionDescription>
+                Những thắc mắc phổ biến của người dùng về Sky Video Chat.
+              </SectionDescription>
+              <FAQList>
+                <FAQItem>
+                  <FAQQuestion>Làm thế nào để đăng ký tài khoản?</FAQQuestion>
+                  <FAQAnswer>
+                    Nhấn nút "Đăng ký" hoặc truy cập trang đăng ký. Điền thông tin cần thiết và xác nhận qua email.
+                  </FAQAnswer>
+                </FAQItem>
+                <FAQItem>
+                  <FAQQuestion>Sky Video Chat có thu phí không?</FAQQuestion>
+                  <FAQAnswer>
+                    Không toàn bộ đều miễn phí.
+                  </FAQAnswer>
+                </FAQItem>
+                <FAQItem>
+                  <FAQQuestion>Làm sao để liên hệ với đội hỗ trợ?</FAQQuestion>
+                  <FAQAnswer>
+                    Gửi email đến support@skyvideochat.com hoặc gọi hotline +84 123 456 789.
+                  </FAQAnswer>
+                </FAQItem>
+              </FAQList>
+            </div>
+          </motion.div>
+        </SectionContainer>
 
         <hr />
 
