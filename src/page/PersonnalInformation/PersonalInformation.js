@@ -2,12 +2,14 @@ import styled from "styled-components";
 import logoSky from '../../images/logo-sky.png';
 import Avata from '../../images/avata.jpg';
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DrawerPersonalInformation from '../DrawerPersonalInformation/DrawerPersonalInformation';
 import DrawerChangePassword from '../DrawerChangePassword/DrawerChangePassword';
 import { getUserInfo } from './services';
+import { uploadAvatar } from './services'
 import dayjs from 'dayjs';
 import { FaBars, FaSignOutAlt, FaClipboardList } from 'react-icons/fa';
+import { getFullAvatarUrl } from './services';
 
 // Header (phần điều hướng trên cùng)
 const RouteLink = styled.nav`
@@ -65,15 +67,22 @@ const Overlay = styled.div`
 `;
 
 const ButtonAvata = styled.button`
-    background-image: url(${Avata});
     background-size: cover;
     background-position: center;
     height: 70px;
     width: 70px;
-    border: none;
+    border-color: cornflowerblue;
     border-radius: 50%;
     margin-bottom: 10px;
+    padding: 0; /* Đảm bảo không có padding */
 `;
+
+const ImgAvata = styled.img`
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+`
 
 const UserNameLink = styled(Link)`
     text-decoration: none;
@@ -192,12 +201,42 @@ function PersonalInformation() {
     const [userInfo, setUserInfo] = useState(null); // Khởi tạo userInfo là null
     const navigate = useNavigate();
     const accessToken = localStorage.getItem('access_token');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false); // Track selected avatar
+    const [selectedAvatar, setSelectedAvatar] = useState(null);
+    const [isUploading, setIsUploading] = useState(null)
+    const fileInputRef = useRef(null);
 
     const handleReturnHome = () => {
         navigate('/');
     };
 
+
+    const handleButtonAvataClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click(); // Simulate click on input
+        }
+    };
+
+    const handleFileChange = async (event) => {
+        const file = event.target.files[0];
+        if (file && userInfo?.loginName) {
+            setIsUploading(true);
+            console.log('Login name:', userInfo?.loginName);
+            try {
+                await uploadAvatar(userInfo.loginName, file); // Gửi tệp lên server
+                console.log('Upload successful');
+                // Tải lại trang sau khi cập nhật ảnh đại diện thành công
+                window.location.reload();
+            } catch (error) {
+                console.error('Upload failed:', error);
+            } finally {
+                setIsUploading(false);
+            }
+        } else {
+            console.error('No file selected or loginName is missing.');
+        }
+    };
+    
     // Lấy userId từ localStorage
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -215,6 +254,7 @@ function PersonalInformation() {
         const fetchUserInfo = async () => {
             try {
                 const data = await getUserInfo();
+
                 setUserInfo({
                     loginName: data.loginName,
                     name: data.fullName,
@@ -223,6 +263,7 @@ function PersonalInformation() {
                     address: data.DiaChi || "N/A",
                     phone: data.SoDienThoai || "N/A",
                     email: data.email,
+                    avatar: getFullAvatarUrl(data.AnhDaiDien), // Sử dụng hàm getFullAvatarUrl để tạo URL đầy đủ
                 });
             } catch (error) {
                 console.error('Could not fetch user information:', error);
@@ -232,7 +273,6 @@ function PersonalInformation() {
 
         fetchUserInfo();
     }, [navigate]);
-
 
     const toggleEditing = () => {
         if (isEditing) {
@@ -278,6 +318,8 @@ function PersonalInformation() {
         navigate('/attendance'); // Assuming there's a page for attendance
     };
 
+    const avatarUrl = getFullAvatarUrl(userInfo?.AnhDaiDien);
+
     return (
         <>
             <RouteLink>
@@ -306,9 +348,24 @@ function PersonalInformation() {
             }} />
             <ContentWrapper style={{ opacity: isEditing || isPasswordChanging ? 0.5 : 1 }}>
                 <AvatarWrapper>
-                    <ButtonAvata src={Avata} alt="Avata" /> <br />
+                    <ButtonAvata onClick={handleButtonAvataClick}>
+                        <ImgAvata
+                            src={userInfo?.avatar || Avata} // Nếu avatar tồn tại, dùng avatar từ API, nếu không hiển thị ảnh mặc định
+                            alt="User Avatar"
+                        />
+                    </ButtonAvata>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        accept="image/*" // Chỉ chấp nhận file ảnh
+                        onChange={handleFileChange}
+                    />
+                    <br />
                     <UserNameLink>{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
                 </AvatarWrapper>
+
+                {isUploading && <p>Đang tải lên...</p>}
 
                 <InfoWrapper>
                     <InfoCard>

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faVideo, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 import { getUserInfo, createLopHoc, checkClass } from './services';
+import { getFullAvatarUrl } from './services';
 
 const BackgroundImg = styled.div`
     position: relative;
@@ -74,16 +75,35 @@ const StyledLink = styled(Link)`
     margin-top: 45px;
 `;
 
+// const ButtonAvata = styled.button`
+//     background-image: url(${Avata});
+//     background-size: cover;
+//     background-position: center;
+//     height: 40px;
+//     width: 40px;
+//     border: none;
+//     border-radius: 50%;
+//     margin-right: 10px; /* Space between avatar and name */
+//     cursor: pointer;
+// `;
+
 const ButtonAvata = styled.button`
-    background-image: url(${Avata});
     background-size: cover;
     background-position: center;
     height: 40px;
     width: 40px;
-    border: none;
+    border-color: cornflowerblue;
     border-radius: 50%;
-    margin-right: 10px; /* Space between avatar and name */
-    cursor: pointer;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    padding: 0; /* Đảm bảo không có padding */
+`;
+
+const ImgAvata = styled.img`
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
 `;
 
 const UserNameLink = styled(Link)`
@@ -208,20 +228,26 @@ function CreateClass() {
   // Lấy thông tin người dùng khi userId thay đổi
   useEffect(() => {
     const fetchUserInfo = async () => {
-      try {
-        const data = await getUserInfo(userId);
-        setUserInfo({
-          name: data.fullName,
-        });
-      } catch (error) {
-        console.error('Không thể lấy thông tin người dùng:', error);
-      }
+        try {
+            const data = await getUserInfo(userId);
+            console.log("User Data:", data);  // Kiểm tra dữ liệu API trả về
+
+            // Kiểm tra lại và xử lý avatar
+            const avatarUrl = data.AnhDaiDien ? getFullAvatarUrl(data.AnhDaiDien) : Avata; // Nếu không có ảnh, dùng ảnh mặc định
+
+            setUserInfo({
+                name: data.fullName,
+                avatar: avatarUrl,  // Sử dụng URL ảnh đã được tạo
+            });
+        } catch (error) {
+            console.error('Không thể lấy thông tin người dùng:', error);
+        }
     };
 
     if (userId) {
-      fetchUserInfo();
+        fetchUserInfo();
     }
-  }, [userId]);
+}, [userId]);
 
   const handlePersonalInformationClick = () => {
     navigate('/personal-information');
@@ -231,7 +257,7 @@ function CreateClass() {
     try {
       // Kiểm tra mã lớp qua API
       const classExists = await checkClass(classCode); // Gọi API kiểm tra mã lớp
-  
+
       if (classExists) {
         // Nếu tồn tại, điều hướng đến phòng chờ
         navigate(`/waiting-room/${classCode}`);
@@ -245,8 +271,8 @@ function CreateClass() {
     }
   };
 
-    const closeModal = () => {
-      setShowModal(false); // Đóng modal
+  const closeModal = () => {
+    setShowModal(false); // Đóng modal
   };
 
 
@@ -257,15 +283,15 @@ function CreateClass() {
     }
 
     try {
-        // Gửi yêu cầu tạo lớp học với userId
-        const createdClass = await createLopHoc(userId);
-        
-        console.log('Lớp học được tạo thành công:', createdClass);
+      // Gửi yêu cầu tạo lớp học với userId
+      const createdClass = await createLopHoc(userId);
 
-        navigate(`/classroom/${createdClass.MaLop}`);
+      console.log('Lớp học được tạo thành công:', createdClass);
+
+      navigate(`/classroom/${createdClass.MaLop}`);
     } catch (error) {
-        console.error('Lỗi khi tạo lớp học:', error);
-        alert('Không thể tạo lớp học. Vui lòng thử lại.');
+      console.error('Lỗi khi tạo lớp học:', error);
+      alert('Không thể tạo lớp học. Vui lòng thử lại.');
     }
   };
 
@@ -283,10 +309,16 @@ function CreateClass() {
         </HeaderLeft>
 
         <HeaderRight>
-          <ButtonAvata onClick={handlePersonalInformationClick} />
-          <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
-        </HeaderRight>
-      </RouteLink>
+          {/* <ButtonAvata onClick={handlePersonalInformationClick} /> */}
+          <ButtonAvata onClick={handlePersonalInformationClick}>
+            <ImgAvata
+              src={userInfo?.avatar || Avata} // Nếu avatar không hợp lệ, hiển thị ảnh mặc định
+              alt="User Avatar"
+            />
+          </ButtonAvata>
+        <UserNameLink to="/personal-information">{userInfo ? userInfo.name : 'Loading...'}</UserNameLink>
+      </HeaderRight>
+    </RouteLink >
 
       <BackgroundImg>
         <BackgroundOverlay />
