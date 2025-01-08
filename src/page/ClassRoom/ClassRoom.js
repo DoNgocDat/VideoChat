@@ -11,7 +11,9 @@ import {
 // import io from 'socket.io-client'; // Import socket.io-client
 import { useSocketContext } from '../socketContext';
 import * as XLSX from 'xlsx';
-import { saveAttendance } from './services';
+import { saveAttendance, saveHistoryCall } from './services';
+import { format } from 'date-fns';
+
 
 const Container = styled.div`
   display: flex;
@@ -509,6 +511,8 @@ const TableData = styled.td`
 function ClassRoom() {
   const navigate = useNavigate();
   const { classCode } = useParams(); // Lấy mã lớp từ URL
+  const [currentTime, setCurrentTime] = useState('');
+
   const username = localStorage.getItem('full_name');
 
   // const { localStream, remoteStreams } = useWebRTC(classCode);
@@ -534,6 +538,18 @@ function ClassRoom() {
   const remoteVideoRefs = useRef([]);
   const [localStream, setLocalStream] = useState(null); // Luồng video/audio local
   const [remoteStreams, setRemoteStreams] = useState([]); // Danh sách luồng remote
+
+  const [startTime, setStartTime] = useState(null); // Lưu thời gian bắt đầu
+  const [endTime, setEndTime] = useState(null);     // Lưu thời gian kết thúc 
+
+    // Lưu thời gian bắt đầu chỉ một lần
+    useEffect(() => {
+      if (!startTime) {
+        const now = new Date();
+        setStartTime(now);
+        console.log("Thời gian bắt đầu lớp:", format(now, 'dd/MM/yyyy HH:mm:ss'));
+      }
+    }, [startTime]);
 
   /* const [searchTerm, setSearchTerm] = useState(""); // Quản lý giá trị tìm kiếm
 
@@ -701,7 +717,7 @@ function ClassRoom() {
         socket.emit("ice-candidate", {
           candidate: event.candidate,
           room: classCode,
-          senderId: myUserId,
+          // senderId: myUserId,
         });
       } else {
         console.log("Không còn ICE candidate.");
@@ -710,9 +726,10 @@ function ClassRoom() {
 
     pc.ontrack = (event) => {
       const [stream] = event.streams;
-      if (!remoteStreams.find((s) => s.id === stream.id)) {
-        setRemoteStreams((prev) => [...prev, stream]);
-      }
+      setRemoteStreams((prevStreams) => {
+        const alreadyExists = prevStreams.some((s) => s.id === stream.id);
+        return alreadyExists ? prevStreams : [...prevStreams, stream];
+      });
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -731,144 +748,12 @@ function ClassRoom() {
     return pc;
   }, [socket, classCode, myUserId, remoteStreams]);
 
-  // Cập nhật createPeerConnection để chỉ gửi tín hiệu đến SFU
-
-  // const createPeerConnection = useCallback(() => {
-  //   if (peerConnection.current) {
-  //     // Nếu kết nối hiện tại chưa đóng, đóng nó trước
-  //     if (peerConnection.current.signalingState !== 'closed') {
-  //       peerConnection.current.close();
-  //     }
-  //   }
-
-  //   const pc = new RTCPeerConnection({
-  //     iceServers: [
-  //       { urls: 'stun:stun.l.google.com:19302' },
-  //       { urls: 'turn:your-turn-server.com', username: 'user', credential: 'password' },
-  //     ],
-  //   });
-
-  //   // Kiểm tra socket và classCode trước khi đăng ký sự kiện ICE
-  //   const handleIceCandidate = (event) => {
-  //     if (!socket) {
-  //       console.warn('Socket chưa được khởi tạo. Không thể gửi ICE candidate.');
-  //       return;
-  //     }
-
-  //     if (!classCode) {
-  //       console.warn('Mã lớp học không hợp lệ. Không thể gửi ICE candidate.');
-  //       return;
-  //     }
-
-  //     if (event.candidate) {
-  //       try {
-  //         socket.emit('ice-candidate', { 
-  //           candidate: event.candidate, 
-  //           room: classCode,
-  //           senderId: myUserId,
-  //         });
-  //       } catch (error) {
-  //         console.error('Lỗi khi gửi ICE candidate:', error);
-  //       }
-  //     }
-  //   };
-
-  //   // Đăng ký sự kiện ICE candidate với hàm kiểm tra
-  //   pc.onicecandidate = handleIceCandidate;
-
-  //   // Đăng ký sự kiện track
-  //   pc.ontrack = (event) => {
-  //     const [stream] = event.streams;
-  //     if (!remoteStreams.find((s) => s.id === stream.id)) {
-  //       setRemoteStreams((prev) => [...prev, stream]);
-  //     }
-  //   };
-
-  //   peerConnection.current = pc;
-  //   return pc;
-  // }, [socket, classCode, remoteStreams]);
-
 
   useEffect(() => {
     console.log("Cập nhật remoteStreams:", remoteStreams);
   }, [remoteStreams]);
 
-  // useEffect(() => {
-  //   const setupPeerConnection = async () => {
-  //     let localMediaStream = null;
 
-  //     try {
-  //       // Kiểm tra nếu PeerConnection đã tồn tại và còn hoạt động
-  //       if (peerConnection.current && peerConnection.current.signalingState !== "closed") {
-  //         console.log("PeerConnection đã tồn tại, sử dụng lại.");
-  //         console.log("PeerConnection hiện tại:", peerConnection.current);
-  //         return; // Thoát sớm, không tạo mới
-  //       }
-
-  //       // Chỉ tạo mới PeerConnection nếu cần
-  //       const pc = createPeerConnection();
-  //       peerConnection.current = pc; // Gán PeerConnection vào biến toàn cục
-
-  //       // Lấy luồng media từ thiết bị
-  //       try {
-  //         localMediaStream = await navigator.mediaDevices.getUserMedia({
-  //           video: true,
-  //           audio: true,
-  //         });
-  //         setLocalStream(localMediaStream);
-  //         console.log("Lấy được luồng media từ thiết bị.");
-  //       } catch (mediaError) {
-  //         console.error("Lỗi truy cập media:", mediaError);
-
-  //         // Nếu không truy cập được thiết bị, sử dụng luồng giả lập
-  //         const simulatedStream = createSimulatedStream();
-  //         if (simulatedStream) {
-  //           localMediaStream = simulatedStream;
-  //           setLocalStream(simulatedStream);
-  //           console.warn("Sử dụng luồng giả lập do lỗi truy cập thiết bị.");
-  //         } else {
-  //           throw new Error("Không thể tạo luồng media.");
-  //         }
-  //       }
-
-  //       // Thêm các track vào PeerConnection
-  //       const addedTrackIds = new Set();
-  //       if (localMediaStream) {
-  //         localMediaStream.getTracks().forEach((track) => {
-  //           if (!addedTrackIds.has(track.id)) {
-  //             try {
-  //               pc.addTrack(track, localMediaStream);
-  //               addedTrackIds.add(track.id);
-  //               console.log("Track được thêm vào PeerConnection:", track);
-  //             } catch (addTrackError) {
-  //               console.error("Lỗi khi thêm track vào PeerConnection:", addTrackError);
-  //             }
-  //           }
-  //         });
-  //       }
-  //     } catch (error) {
-  //       console.error("Lỗi khi thiết lập PeerConnection:", error);
-  //     }
-
-  //     // Cleanup khi component unmount
-  //     return () => {
-  //       if (localMediaStream) {
-  //         localMediaStream.getTracks().forEach((track) => track.stop());
-  //         console.log("Dừng tất cả các track của luồng media.");
-  //       }
-  //       if (peerConnection.current) {
-  //         peerConnection.current.ontrack = null;
-  //         peerConnection.current.onicecandidate = null;
-  //         peerConnection.current.oniceconnectionstatechange = null;
-  //         peerConnection.current.close();
-  //         peerConnection.current = null;
-  //         console.log("Đóng và xóa PeerConnection.");
-  //       }
-  //     };
-  //   };
-
-  //   setupPeerConnection();
-  // }, [createPeerConnection]);
   const setupPeerConnection = useCallback(async () => {
     let localMediaStream = null;
 
@@ -924,8 +809,8 @@ function ClassRoom() {
   }, [peerConnection, createPeerConnection, setLocalStream]);
 
 
-  const retryCounts = useRef(new Map()); // Theo dõi số lần thử
-  const MAX_RETRIES = 5; // Giới hạn số lần gửi offer
+  // const retryCounts = useRef(new Map()); // Theo dõi số lần thử
+  // const MAX_RETRIES = 5; // Giới hạn số lần gửi offer
 
   useEffect(() => {
     // const storedUserId = localStorage.getItem('userId');
@@ -933,42 +818,6 @@ function ClassRoom() {
       setMyUserId(id);
     }
   }, [id]);
-
-  //   const initiateWebRTCConnection = useCallback(async (otherUser) => {
-  //     currentOtherUser.current = otherUser; // Cập nhật giá trị vào ref
-
-  //     try {
-  //         console.log('--- Bắt đầu khởi tạo WebRTC Connection ---');
-  //         console.log('Target userId:', otherUser.userId);
-
-  //         const pc = createPeerConnection(currentOtherUser.current);
-  //         console.log('Đã khởi tạo PeerConnection:', pc , ' với người dùng: ', currentOtherUser.current);
-
-  //         const offer = await pc.createOffer();
-  //         console.log('Đã tạo offer:', offer);
-
-  //         await pc.setLocalDescription(offer);
-  //         console.log('Đã đặt local description:', pc.localDescription);
-
-  //         socket.emit('offer', {
-  //             offer,
-  //             targetUserId: parseInt(otherUser.userId, 10),
-  //             senderUserId: myUserId, // Thêm ID của người gửi
-  //         });
-  //         console.log('Đã gửi offer tới targetUserId:', otherUser.userId, 'từ senderUserId:', myUserId);
-
-  //         const currentRetries = retryCounts.current.get(otherUser.userId) || 0;
-  //         retryCounts.current.set(otherUser.userId, currentRetries + 1);
-  //         console.log('Số lần gửi offer cho userId:', otherUser.userId, '->', currentRetries + 1);
-
-  //         if (currentRetries + 1 >= MAX_RETRIES) {
-  //             console.warn(`Đạt giới hạn gửi offer cho userId: ${otherUser.userId}`);
-  //             offeredUsers.current.delete(otherUser.userId);
-  //         }
-  //     } catch (error) {
-  //         console.error('Lỗi khi tạo offer:', error);
-  //     }
-  // }, [socket, createPeerConnection, myUserId]);
 
   // Khởi tạo kết nối WebRTC và gửi offer đến server
   const initiateWebRTCConnection = useCallback(async () => {
@@ -996,16 +845,17 @@ function ClassRoom() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Gửi offer lên server SFU
-      socket.emit("offer", { offer, room: classCode, senderId: myUserId });
-      console.log("Đã gửi offer đến SFU:", offer);
-    } catch (error) {
-      console.error("Lỗi khi khởi tạo WebRTC:", error);
-    }
-  }, [setupPeerConnection, peerConnection, socket, classCode, myUserId]);
-
-
-
+    // Gửi offer lên server SFU
+    socket.emit("offer", { 
+      offer, 
+      room: classCode, 
+      // senderId: myUserId 
+    });
+    console.log("Đã gửi offer đến SFU:", offer);
+  } catch (error) {
+    console.error("Lỗi khi khởi tạo WebRTC:", error);
+  }
+}, [setupPeerConnection, peerConnection, socket, classCode]);
 
   const isWaitingForConnection = useRef(false); // Prevent duplicate polling
   const offeredUsers = useRef(new Set());
@@ -1140,33 +990,24 @@ function ClassRoom() {
         socket.emit("answer", {
           answer: pc.localDescription,
           room: classCode,
-          senderId: myUserId,
+          // senderId: myUserId,
         });
       } catch (error) {
         console.error("Lỗi khi xử lý offer:", error);
       }
     };
 
-
-
     const handleAnswer = async (data) => {
       try {
-        if (!peerConnection.current) {
-          console.warn('No active peer connection');
+        if (peerConnection.current.signalingState !== "have-local-offer") {
+          console.warn("Trạng thái signaling không hợp lệ:", peerConnection.current.signalingState);
           return;
         }
-
-        // Kiểm tra trạng thái
-        if (peerConnection.current.signalingState !== 'have-local-offer') {
-          console.warn('Invalid signaling state for setting remote answer:', peerConnection.current.signalingState);
-          return;
-        }
-
-        const remoteDesc = new RTCSessionDescription(data.answer);
-        await peerConnection.current.setRemoteDescription(remoteDesc);
-        console.log('Remote description set successfully');
+    
+        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+        console.log("Đặt Remote Description với answer thành công");
       } catch (error) {
-        console.error('Error handling answer:', error);
+        console.error("Lỗi khi xử lý answer:", error);
       }
     };
 
@@ -1176,6 +1017,8 @@ function ClassRoom() {
         return;
       }
       try {
+        console.log("Signaling State:", peerConnection.current?.signalingState);
+        console.log("ICE Connection State:", peerConnection.current?.iceConnectionState);
         await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
         console.log("Đã thêm ICE candidate thành công.");
       } catch (error) {
@@ -1211,7 +1054,6 @@ function ClassRoom() {
       // }
     });
 
-
     // Lắng nghe thông báo
     socket.on('notification', (data) => {
       console.log('Nhận thông báo:', data);
@@ -1224,7 +1066,6 @@ function ClassRoom() {
       console.log('Danh sách yêu cầu tham gia:', requests);
       setJoinRequests(requests);
     });
-
 
     socket.on("receive-message", (message) => {
       // Kiểm tra nếu tin nhắn là của chính người gửi thì bỏ qua
@@ -1247,123 +1088,6 @@ function ClassRoom() {
       }, 2000);
       // }
     });
-
-    // Lắng nghe offer từ WebRTC
-    // socket.on('offer', async (offer) => {
-    //     console.log('Nhận offer:', offer);
-    //     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
-    //     const answer = await peerConnection.current.createAnswer();
-    //     await peerConnection.current.setLocalDescription(answer);
-    //     // socket.emit('answer', answer);
-    //     socket.emit('answer', { answer, targetUserId: targetUser.id });
-    //     console.log(answer, targetUser);
-    // });
-
-    // Nhận offer
-    // socket.on("offer", async (data) => {
-    //   console.log("Nhận offer đầy đủ:", data);
-
-    //   if (!data || !data.offer || !data.senderUserId) {
-    //       console.error("Lỗi: Dữ liệu offer không hợp lệ. Dữ liệu nhận được:", data);
-    //       return;
-    //   }
-
-    //   try {
-    //       const pc = createPeerConnection();
-    //       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    //       console.log("Đã đặt remote description thành công.");
-
-    //       const answer = await pc.createAnswer();
-    //       await pc.setLocalDescription(answer);
-
-    //       socket.emit("answer", {
-    //           answer: pc.localDescription,
-    //           targetUserId: data.senderUserId, // Trả lời người gửi offer
-    //       });
-    //       console.log("Đã gửi answer tới senderUserId:", data.senderUserId);
-    //   } catch (error) {
-    //       console.error("Lỗi khi xử lý offer:", error);
-    //   }
-    // });
-
-
-    // // Lắng nghe answer từ WebRTC
-    // socket.on('answer', async (answer) => {
-    //     console.log('Nhận answer:', answer);
-    //     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
-    // });
-
-    // Nhận answer
-
-    // Nhận offer từ server SFU
-
-    // socket.on('offer', async (data) => {
-    //   const pc = createPeerConnection();
-    //   await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    //   const answer = await pc.createAnswer();
-    //   await pc.setLocalDescription(answer);
-    //   socket.emit('answer', { answer: pc.localDescription, room: classCode });
-    // });
-
-    // socket.on('answer', async (data) => {
-    //   console.log('Nhận answer:', data.answer);
-
-    //   try {
-    //     await peerConnection.current.setRemoteDescription(
-    //       new RTCSessionDescription(data.answer)
-    //     );
-    //   } catch (error) {
-    //     console.error('Lỗi khi xử lý answer:', error);
-    //   }
-
-    //   // Xóa số lần thử khi nhận được phản hồi
-    //   retryCounts.current.delete(data.senderUserId);
-    // });
-
-
-    // // Lắng nghe ice-candidate từ WebRTC
-    // socket.on('ice-candidate', (candidate) => {
-    //     console.log('Nhận ICE candidate:', candidate);
-    //     peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
-    // });
-
-    // Nhận ICE candidate
-
-
-    // Nhận answer từ server SFU
-
-    // socket.on('answer', async (data) => {
-    //   try {
-    //     if (peerConnection.current) {
-    //       await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-    //     }
-    //   } catch (error) {
-    //     console.error('Lỗi khi xử lý answer:', error);
-    //   }
-    // });
-
-    // socket.on('ice-candidate', (data) => {
-    //   console.log('Nhận ICE candidate:', data.candidate);
-
-    //   try {
-    //     peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-    //     console.log("Thêm ICE candidate thành công:", data.candidate);
-    //   } catch (error) {
-    //     console.error('Lỗi khi thêm ICE candidate:', error);
-    //   }
-    // });
-
-    // Nhận ICE candidate từ server SFU
-
-    // socket.on('ice-candidate', (data) => {
-    //   try {
-    //     if (peerConnection.current) {
-    //       peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-    //     }
-    //   } catch (error) {
-    //     console.error('Lỗi khi thêm ICE candidate:', error);
-    //   }
-    // });
 
     return () => {
       socket.emit('leave-room', { classCode });
@@ -1718,7 +1442,7 @@ function ClassRoom() {
 
         console.log("Dữ liệu gửi đi:", dataToSend);
 
-        // await saveAttendance(dataToSend);
+        await saveAttendance(dataToSend);
         console.log("Dữ liệu điểm danh đã được gửi thành công tới server.");
       } catch (error) {
         console.error("Lỗi khi xuất file:", error);
@@ -1727,7 +1451,15 @@ function ClassRoom() {
   };
 
   // Hàm thoát phòng học
-  const handleLeaveClass = () => {
+  const handleLeaveClass = async() => {
+    const now = new Date();
+    setEndTime(now);
+
+    console.log(`Thời gian kết thúc lớp: ${format(now, 'dd/MM/yyyy HH:mm:ss')}`);
+
+    const data = { classCode, startTime: format(startTime, 'dd/MM/yyyy HH:mm:ss'), endTime: format(now, 'dd/MM/yyyy HH:mm:ss') };
+    console.log("Dữ liệu lịch sử cuộc gọi:", data);
+    
     console.log("isOwner:", isOwner, "isAttendanceExported:", isAttendanceExported);
 
     // Nếu là chủ phòng và chưa xuất file thì hiện thông báo
@@ -1743,6 +1475,8 @@ function ClassRoom() {
           handleExportFile();
         }
       }
+
+      await saveHistoryCall(data);
     }
 
     // 1. Dừng localStream
@@ -1810,15 +1544,21 @@ function ClassRoom() {
         {/* <StyledVideo ref={remoteVideoRef} autoPlay playsInline style={{ borderRadius: '10px'}}/> */}
         {/* {remoteStreams.length > 0 ? ( */}
         {remoteStreams.map((stream, index) => {
-          console.log("Gán stream vào video:", { stream, index });
-          const uniqueKey = `${stream.id || `generated`}-${index}`;
+          // Tạo unique key bằng cách sử dụng stream.id hoặc kết hợp index với timestamp
+          const uniqueKey = stream.id || `stream-${index}-${Date.now()}`;
+
+
           return (
             <StyledVideo
-              key={`remote-stream-${uniqueKey}`}
+              key={uniqueKey} // Đảm bảo key luôn duy nhất
               ref={(el) => {
                 if (el) {
+                  // Lưu tham chiếu video vào remoteVideoRefs
                   remoteVideoRefs.current[index] = el;
+
+                  // Gán srcObject nếu chưa gán
                   if (el.srcObject !== stream) {
+                    console.log("Gán stream vào video:", { stream, uniqueKey });
                     el.srcObject = stream;
                   }
                 }
@@ -1827,12 +1567,13 @@ function ClassRoom() {
               playsInline
               style={{
                 borderRadius: '10px',
-                display: stream ? 'block' : 'block',
+                // display: 'block',
               }}
               isScreenSharing={isScreenSharing}
             />
           );
         })}
+
 
 
         {/* Video để xem màn hình được chia sẻ */}
