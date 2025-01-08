@@ -290,9 +290,9 @@ function PersonalInformation() {
                         <FaBars />
                     </MenuIcon>
                     <DropdownMenu isOpen={isMenuOpen}>
-                        <MenuItem onClick={handleAttendance}>
+                        {/* <MenuItem onClick={handleAttendance}>
                             <FaClipboardList /> Điểm danh
-                        </MenuItem>
+                        </MenuItem> */}
                         <MenuItem onClick={handleLogout}>
                             <FaSignOutAlt /> Đăng xuất
                         </MenuItem>
